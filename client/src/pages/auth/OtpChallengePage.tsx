@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { REGEXP_ONLY_DIGITS } from "input-otp";
 import { AuthBackLink } from "@/components/auth/AuthBackLink";
@@ -8,6 +8,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { Label } from "@/components/ui/label";
 import { useLanguage } from "@/i18n/LanguageContext";
+import { apiFetch, type ApiError } from "@/lib/api";
+import { getLastLoginEmail, getPendingSignupEmail, setOtpSessionId, getOtpSessionId } from "@/lib/session";
 
 export default function OtpChallengePage() {
   const { t } = useLanguage();
@@ -15,15 +17,53 @@ export default function OtpChallengePage() {
   const [value, setValue] = useState("");
   const [trust, setTrust] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [startError, setStartError] = useState<string | null>(null);
+  const [verifyError, setVerifyError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const email = getLastLoginEmail() || getPendingSignupEmail();
+    if (!email) {
+      setStartError(t("auth.otp.needEmail"));
+      return;
+    }
+    void (async () => {
+      try {
+        const res = await apiFetch<{ sessionId: string }>("/api/auth/otp/start", {
+          method: "POST",
+          body: JSON.stringify({ email }),
+        });
+        setOtpSessionId(res.sessionId);
+        setStartError(null);
+      } catch {
+        setStartError(t("auth.error.network"));
+      }
+    })();
+  }, [t]);
 
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (value.length !== 6) return;
+    const sessionId = getOtpSessionId();
+    if (!sessionId) {
+      setVerifyError(t("auth.otp.needEmail"));
+      return;
+    }
     setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
-      navigate("/auth/welcome", { replace: true, state: { from: "otp" } });
-    }, 600);
+    setVerifyError(null);
+    void (async () => {
+      try {
+        await apiFetch("/api/auth/otp/verify", {
+          method: "POST",
+          body: JSON.stringify({ sessionId, code: value }),
+        });
+        navigate("/auth/welcome", { replace: true, state: { from: "otp" } });
+      } catch (err) {
+        const e = err as ApiError;
+        setVerifyError(e.message || t("auth.error.network"));
+      } finally {
+        setLoading(false);
+      }
+    })();
   };
 
   return (
@@ -33,6 +73,9 @@ export default function OtpChallengePage() {
         <h1 className="text-2xl font-extrabold tracking-tight text-foreground">{t("auth.otp.title")}</h1>
         <p className="text-base text-muted-foreground">{t("auth.otp.subtitle")}</p>
       </div>
+
+      {startError ? <p className="mt-4 text-sm text-destructive">{startError}</p> : null}
+      {verifyError ? <p className="mt-4 text-sm text-destructive">{verifyError}</p> : null}
 
       <form className="mt-8 space-y-6" onSubmit={onSubmit}>
         <div>

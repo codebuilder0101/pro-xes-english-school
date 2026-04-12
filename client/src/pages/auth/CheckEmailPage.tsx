@@ -6,13 +6,28 @@ import { AuthBackLink } from "@/components/auth/AuthBackLink";
 import { AuthCard } from "@/components/auth/AuthCard";
 import { AuthSecondaryLink } from "@/components/auth/AuthSecondaryLink";
 import { useLanguage } from "@/i18n/LanguageContext";
+import { apiFetch } from "@/lib/api";
+import { setPasswordResetToken } from "@/lib/session";
 
 export default function CheckEmailPage() {
   const { t } = useLanguage();
   const location = useLocation();
-  const flow = (location.state as { flow?: string } | null)?.flow;
+  const state = location.state as { flow?: string; email?: string } | null;
+  const flow = state?.flow;
+  const email = state?.email;
 
-  const handleResend = () => {
+  const handleResend = async () => {
+    if (flow === "reset" && email) {
+      try {
+        const res = await apiFetch<{ dev?: { resetToken?: string } }>("/api/auth/forgot-password", {
+          method: "POST",
+          body: JSON.stringify({ email }),
+        });
+        if (res.dev?.resetToken) setPasswordResetToken(res.dev.resetToken);
+      } catch {
+        /* ignore */
+      }
+    }
     toast.success(t("auth.checkEmail.resend"));
   };
 
@@ -30,6 +45,11 @@ export default function CheckEmailPage() {
           <p className="mt-4 text-base text-muted-foreground" role="status">
             {t("auth.forgot.success")}
           </p>
+        ) : null}
+        {flow === "reset" ? (
+          <Button type="button" variant="secondary" className="mt-4 min-h-11 w-full text-base font-bold" asChild>
+            <Link to="/auth/reset-password">{t("auth.reset.title")}</Link>
+          </Button>
         ) : null}
       </div>
 

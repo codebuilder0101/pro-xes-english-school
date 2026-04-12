@@ -8,6 +8,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { Label } from "@/components/ui/label";
 import { useLanguage } from "@/i18n/LanguageContext";
+import { apiFetch, type ApiError } from "@/lib/api";
+import { getLastLoginEmail, setAccessToken } from "@/lib/session";
 
 export default function MfaChallengePage() {
   const { t } = useLanguage();
@@ -15,15 +17,33 @@ export default function MfaChallengePage() {
   const [value, setValue] = useState("");
   const [trust, setTrust] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
     if (value.length !== 6) return;
+    const email = getLastLoginEmail();
+    if (!email) {
+      setError(t("auth.otp.needEmail"));
+      return;
+    }
     setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
-      navigate("/auth/welcome", { replace: true, state: { from: "mfa" } });
-    }, 600);
+    setError(null);
+    void (async () => {
+      try {
+        const res = await apiFetch<{ token: string }>("/api/auth/mfa/verify-login", {
+          method: "POST",
+          body: JSON.stringify({ email, code: value }),
+        });
+        setAccessToken(res.token);
+        navigate("/auth/welcome", { replace: true, state: { from: "mfa" } });
+      } catch (err) {
+        const ex = err as ApiError;
+        setError(ex.message || t("auth.error.network"));
+      } finally {
+        setLoading(false);
+      }
+    })();
   };
 
   return (
@@ -33,6 +53,8 @@ export default function MfaChallengePage() {
         <h1 className="text-2xl font-extrabold tracking-tight text-foreground">{t("auth.mfaChallenge.title")}</h1>
         <p className="text-base text-muted-foreground">{t("auth.mfaChallenge.subtitle")}</p>
       </div>
+
+      {error ? <p className="mt-4 text-sm text-destructive">{error}</p> : null}
 
       <form className="mt-8 space-y-6" onSubmit={submit}>
         <div>

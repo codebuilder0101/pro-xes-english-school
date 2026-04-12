@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -10,10 +10,13 @@ import { AuthPrimaryButton } from "@/components/auth/AuthPrimaryButton";
 import { AuthSecondaryLink } from "@/components/auth/AuthSecondaryLink";
 import { AuthSocialButtons } from "@/components/auth/AuthSocialButtons";
 import { AuthTextField } from "@/components/auth/AuthTextField";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { PasswordStrengthMeter } from "@/components/auth/PasswordStrengthMeter";
 import { useLanguage } from "@/i18n/LanguageContext";
 import type { TranslationKey } from "@/i18n/translations";
 import { scorePasswordStrength, signUpSchema, type SignUpValues } from "@/lib/authValidation";
+import { apiFetch, type ApiError } from "@/lib/api";
+import { setEmailVerificationToken, setPendingSignupEmail } from "@/lib/session";
 
 function isTranslationKey(key: string): key is TranslationKey {
   return key.startsWith("auth.");
@@ -22,6 +25,7 @@ function isTranslationKey(key: string): key is TranslationKey {
 export default function SignUpPage() {
   const { t } = useLanguage();
   const navigate = useNavigate();
+  const [banner, setBanner] = useState<string | null>(null);
 
   const {
     register,
@@ -50,9 +54,29 @@ export default function SignUpPage() {
     return isTranslationKey(msg) ? t(msg) : msg;
   };
 
-  const onSubmit = async (_data: SignUpValues) => {
-    await new Promise((r) => setTimeout(r, 700));
-    navigate("/auth/verify-email", { replace: true });
+  const onSubmit = async (data: SignUpValues) => {
+    setBanner(null);
+    try {
+      const res = await apiFetch<{ dev?: { verificationToken?: string } }>("/api/auth/register", {
+        method: "POST",
+        body: JSON.stringify({
+          email: data.email,
+          password: data.password,
+          name: data.name || undefined,
+          newsletter: data.newsletter,
+        }),
+      });
+      setPendingSignupEmail(data.email);
+      if (res.dev?.verificationToken) setEmailVerificationToken(res.dev.verificationToken);
+      navigate("/auth/verify-email", { replace: true });
+    } catch (e) {
+      const err = e as ApiError;
+      if (err.status === 409) {
+        setBanner(t("auth.error.emailInUse"));
+        return;
+      }
+      setBanner(t("auth.error.network"));
+    }
   };
 
   const strengthLabel =
@@ -69,6 +93,12 @@ export default function SignUpPage() {
           <h1 className="text-2xl font-extrabold tracking-tight text-foreground">{t("auth.signUp.title")}</h1>
           <p className="text-base text-muted-foreground">{t("auth.signUp.subtitle")}</p>
         </div>
+
+        {banner ? (
+          <Alert variant="destructive" className="mt-6" role="alert">
+            <AlertDescription>{banner}</AlertDescription>
+          </Alert>
+        ) : null}
 
         <form id="signup-form" className="mt-6 space-y-5" onSubmit={handleSubmit(onSubmit)} noValidate>
           <AuthTextField

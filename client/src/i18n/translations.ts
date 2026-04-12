@@ -149,6 +149,7 @@ export const translations = {
   "footer.tagline": { pt: "Idioma de forma diferente", en: "Language in a different way" },
 
   // Chat page
+  "chat.loading": { pt: "Carregando salas…", en: "Loading rooms…" },
   "chat.title": { pt: "Chat da Comunidade", en: "Community Chat" },
   "chat.subtitle": { pt: "Conecte-se com estudantes e tutores do mundo todo", en: "Connect with students and tutors worldwide" },
   "chat.rooms": { pt: "Salas", en: "Rooms" },
@@ -243,6 +244,10 @@ export const translations = {
     pt: "Não foi possível conectar. Verifique sua rede e tente de novo.",
     en: "We couldn’t connect. Check your network and try again.",
   },
+  "auth.error.emailInUse": {
+    pt: "Este e-mail já está cadastrado. Tente entrar ou use outro e-mail.",
+    en: "This email is already registered. Try signing in or use a different email.",
+  },
 
   // Forgot / check email / reset
   "auth.forgot.title": { pt: "Esqueceu a senha?", en: "Forgot password?" },
@@ -268,6 +273,10 @@ export const translations = {
   "auth.reset.title": { pt: "Redefinir senha", en: "Reset password" },
   "auth.reset.subtitle": { pt: "Escolha uma nova senha para sua conta.", en: "Choose a new password for your account." },
   "auth.reset.submit": { pt: "Atualizar senha", en: "Update password" },
+  "auth.reset.missingToken": {
+    pt: "Abra o link enviado por e-mail ou solicite um novo para continuar.",
+    en: "Open the link from your email or request a new one to continue.",
+  },
 
   "auth.passwordUpdated.title": { pt: "Senha atualizada", en: "Password updated" },
   "auth.passwordUpdated.body": {
@@ -313,6 +322,10 @@ export const translations = {
   "auth.otp.subtitle": {
     pt: "Digite o código de 6 dígitos enviado ao seu e-mail ou app autenticador.",
     en: "Enter the 6-digit code from your email or authenticator app.",
+  },
+  "auth.otp.needEmail": {
+    pt: "Entre na sua conta primeiro para receber um código neste fluxo.",
+    en: "Sign in first so we know which account should receive a code.",
   },
   "auth.otp.verify": { pt: "Verificar", en: "Verify" },
   "auth.otp.trust": { pt: "Confiar neste dispositivo", en: "Trust this device" },

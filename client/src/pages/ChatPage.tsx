@@ -1,11 +1,14 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import { useLanguage } from "@/i18n/LanguageContext";
+import type { TranslationKey } from "@/i18n/translations";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Send, Mic, MicOff, Volume2, Search, Users, MessageSquare, GraduationCap, ArrowLeft, Hash } from "lucide-react";
 import Navbar from "@/components/landing/Navbar";
 import { Link } from "react-router-dom";
+import { apiFetch, type ApiError } from "@/lib/api";
 
 interface Message {
   id: string;
@@ -31,44 +34,96 @@ interface Room {
   members?: number;
 }
 
-const mockRooms: Room[] = [
-  { id: "1", name: "Airport English", type: "group", flag: "✈️", lastMessage: "Can I see your boarding pass?", time: "2m", unread: 3, members: 24 },
-  { id: "2", name: "Café Talk", type: "group", flag: "☕", lastMessage: "I'd like a cappuccino please", time: "5m", unread: 1, members: 18 },
-  { id: "3", name: "Hotel Check-in", type: "group", flag: "🏨", lastMessage: "Do you have a reservation?", time: "12m", unread: 0, members: 15 },
-  { id: "4", name: "Sarah M.", type: "tutor", flag: "🇺🇸", lastMessage: "Great pronunciation today!", time: "1h", unread: 0, online: true },
-  { id: "5", name: "Carlos R.", type: "direct", flag: "🇧🇷", lastMessage: "Vamos praticar juntos?", time: "3h", unread: 2, online: true },
-  { id: "6", name: "James K.", type: "tutor", flag: "🇬🇧", lastMessage: "Let's work on your accent next", time: "1d", unread: 0, online: false },
-  { id: "7", name: "Yuki T.", type: "direct", flag: "🇯🇵", lastMessage: "Thank you for the tips!", time: "1d", unread: 0, online: false },
-  { id: "8", name: "Shopping English", type: "group", flag: "🛍️", lastMessage: "How much does this cost?", time: "2d", unread: 0, members: 21 },
-];
-
-const mockMessages: Message[] = [
-  { id: "1", sender: "Sarah M.", avatar: "", flag: "🇺🇸", text: "Hi there! Welcome to our café. What can I get for you today?", time: "10:30", isTutor: true },
-  { id: "2", sender: "You", avatar: "", flag: "🇧🇷", text: "Hello! Can I have a cappuccino, please?", time: "10:31", isOwn: true },
-  { id: "3", sender: "Sarah M.", avatar: "", flag: "🇺🇸", text: "Of course! Would you like it with regular milk or oat milk?", time: "10:31", isTutor: true },
-  { id: "4", sender: "Carlos R.", avatar: "", flag: "🇧🇷", text: "I want to practice ordering too! 😄", time: "10:32" },
-  { id: "5", sender: "You", avatar: "", flag: "🇧🇷", text: "Regular milk, please. And do you have any pastries?", time: "10:33", isOwn: true },
-  { id: "6", sender: "Sarah M.", avatar: "", flag: "🇺🇸", text: "Yes! We have croissants, muffins, and scones. The blueberry scones are fresh today! 🫐", time: "10:33", isTutor: true },
-  { id: "7", sender: "Yuki T.", avatar: "", flag: "🇯🇵", text: "What does 'scone' mean? Is it like a cookie?", time: "10:34" },
-  { id: "8", sender: "Sarah M.", avatar: "", flag: "🇺🇸", text: "Great question, Yuki! A scone is a type of bread, usually slightly sweet. It's very popular in British and American cafés.", time: "10:35", isTutor: true },
-];
-
 const ChatPage = () => {
   const { t } = useLanguage();
-  const [selectedRoom, setSelectedRoom] = useState<Room>(mockRooms[1]);
-  const [messages] = useState<Message[]>(mockMessages);
+  const navigate = useNavigate();
+  const [rooms, setRooms] = useState<Room[]>([]);
+  const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState("");
   const [isRecording, setIsRecording] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState<"rooms" | "direct" | "tutors">("rooms");
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const redirectIfUnauthorized = useCallback(
+    (err: unknown) => {
+      const e = err as ApiError;
+      if (e.status === 401) {
+        navigate("/auth/sign-in", { replace: true, state: { from: "/chat" } });
+        return true;
+      }
+      return false;
+    },
+    [navigate],
+  );
+
+  useEffect(() => {
+    void (async () => {
+      setLoadError(null);
+      try {
+        const data = await apiFetch<{ rooms: Room[] }>("/api/chat/rooms");
+        setRooms(data.rooms);
+        setSelectedRoom((prev) => {
+          if (prev && data.rooms.some((r) => r.id === prev.id)) return prev;
+          return data.rooms[1] ?? data.rooms[0] ?? null;
+        });
+      } catch (e) {
+        if (redirectIfUnauthorized(e)) return;
+        setLoadError(t("auth.error.network"));
+      }
+    })();
+  }, [navigate, redirectIfUnauthorized, t]);
+
+  useEffect(() => {
+    if (!selectedRoom) return;
+    void (async () => {
+      try {
+        const data = await apiFetch<{ messages: Message[] }>(`/api/chat/rooms/${selectedRoom.id}/messages`);
+        setMessages(data.messages);
+      } catch (e) {
+        if (redirectIfUnauthorized(e)) return;
+        setMessages([]);
+      }
+    })();
+  }, [selectedRoom, redirectIfUnauthorized]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  const filteredRooms = mockRooms.filter((r) => {
+  const sendMessage = () => {
+    if (!selectedRoom || !inputText.trim()) return;
+    const text = inputText.trim();
+    void (async () => {
+      try {
+        const res = await apiFetch<{ message: Message }>(`/api/chat/rooms/${selectedRoom.id}/messages`, {
+          method: "POST",
+          body: JSON.stringify({ text }),
+        });
+        const msg: Message = { ...res.message, isOwn: true };
+        setMessages((prev) => [...prev, msg]);
+        setInputText("");
+        setRooms((prev) =>
+          prev.map((r) =>
+            r.id === selectedRoom.id
+              ? {
+                  ...r,
+                  lastMessage: text.length > 80 ? `${text.slice(0, 77)}...` : text,
+                  time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+                }
+              : r,
+          ),
+        );
+      } catch (e) {
+        if (redirectIfUnauthorized(e)) return;
+      }
+    })();
+  };
+
+  const filteredRooms = rooms.filter((r) => {
     const matchesSearch = r.name.toLowerCase().includes(searchQuery.toLowerCase());
     if (activeTab === "rooms") return r.type === "group" && matchesSearch;
     if (activeTab === "direct") return r.type === "direct" && matchesSearch;
@@ -76,14 +131,34 @@ const ChatPage = () => {
     return matchesSearch;
   });
 
+  if (loadError) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col">
+        <Navbar />
+        <div className="flex-1 flex items-center justify-center pt-16 px-4">
+          <p className="text-muted-foreground text-center">{loadError}</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!selectedRoom) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col">
+        <Navbar />
+        <div className="flex-1 flex items-center justify-center pt-16 px-4">
+          <p className="text-muted-foreground text-center">{t("chat.loading")}</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <Navbar />
 
       <div className="flex-1 flex pt-16">
-        {/* Sidebar */}
         <aside className={`${sidebarOpen ? "w-80" : "w-0 overflow-hidden"} border-r border-border bg-card flex-shrink-0 flex flex-col transition-all duration-300`}>
-          {/* Header */}
           <div className="p-4 border-b border-border">
             <h2 className="text-lg font-extrabold text-foreground mb-3">{t("chat.title")}</h2>
             <div className="relative">
@@ -97,27 +172,23 @@ const ChatPage = () => {
             </div>
           </div>
 
-          {/* Tabs */}
           <div className="flex border-b border-border">
             {(["rooms", "direct", "tutors"] as const).map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
                 className={`flex-1 py-2.5 text-xs font-bold transition-colors flex items-center justify-center gap-1.5 ${
-                  activeTab === tab
-                    ? "text-primary border-b-2 border-primary"
-                    : "text-muted-foreground hover:text-foreground"
+                  activeTab === tab ? "text-primary border-b-2 border-primary" : "text-muted-foreground hover:text-foreground"
                 }`}
               >
                 {tab === "rooms" && <Hash className="w-3.5 h-3.5" />}
                 {tab === "direct" && <MessageSquare className="w-3.5 h-3.5" />}
                 {tab === "tutors" && <GraduationCap className="w-3.5 h-3.5" />}
-                {t(`chat.${tab}` as any)}
+                {t(`chat.${tab}` as TranslationKey)}
               </button>
             ))}
           </div>
 
-          {/* Room list */}
           <div className="flex-1 overflow-y-auto">
             {filteredRooms.map((room) => (
               <button
@@ -128,9 +199,7 @@ const ChatPage = () => {
                 }`}
               >
                 <div className="relative">
-                  <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center text-lg">
-                    {room.flag}
-                  </div>
+                  <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center text-lg">{room.flag}</div>
                   {room.online && (
                     <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 rounded-full border-2 border-card" />
                   )}
@@ -159,35 +228,27 @@ const ChatPage = () => {
           </div>
         </aside>
 
-        {/* Main chat area */}
         <main className="flex-1 flex flex-col min-w-0">
-          {/* Chat header */}
           <header className="h-14 border-b border-border bg-card flex items-center gap-3 px-4">
-            <button className="lg:hidden" onClick={() => setSidebarOpen(!sidebarOpen)}>
+            <button className="lg:hidden" type="button" onClick={() => setSidebarOpen(!sidebarOpen)}>
               <ArrowLeft className="w-5 h-5" />
             </button>
-            <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-lg">
-              {selectedRoom.flag}
-            </div>
+            <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-lg">{selectedRoom.flag}</div>
             <div>
               <h3 className="text-sm font-bold text-foreground">{selectedRoom.name}</h3>
               <p className="text-[10px] text-muted-foreground">
                 {selectedRoom.members
                   ? `${selectedRoom.members} ${t("chat.members")}`
                   : selectedRoom.online
-                  ? `🟢 ${t("chat.online")}`
-                  : ""}
+                    ? `🟢 ${t("chat.online")}`
+                    : ""}
               </p>
             </div>
           </header>
 
-          {/* Messages */}
           <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-muted/20">
             {messages.map((msg) => (
-              <div
-                key={msg.id}
-                className={`flex gap-3 ${msg.isOwn ? "flex-row-reverse" : ""}`}
-              >
+              <div key={msg.id} className={`flex gap-3 ${msg.isOwn ? "flex-row-reverse" : ""}`}>
                 {!msg.isOwn && (
                   <Avatar className="w-8 h-8 shrink-0">
                     <AvatarFallback className={`text-xs font-bold ${msg.isTutor ? "bg-primary/20 text-primary" : "bg-muted"}`}>
@@ -216,7 +277,10 @@ const ChatPage = () => {
                   <div className={`flex items-center gap-2 mt-1 ${msg.isOwn ? "justify-end" : ""}`}>
                     <span className="text-[10px] text-muted-foreground">{msg.time}</span>
                     {!msg.isOwn && (
-                      <button className="text-[10px] text-muted-foreground hover:text-primary flex items-center gap-0.5 transition-colors">
+                      <button
+                        type="button"
+                        className="text-[10px] text-muted-foreground hover:text-primary flex items-center gap-0.5 transition-colors"
+                      >
                         <Volume2 className="w-3 h-3" /> {t("chat.listen")}
                       </button>
                     )}
@@ -227,15 +291,13 @@ const ChatPage = () => {
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Input */}
           <div className="border-t border-border bg-card p-4">
             <div className="flex items-center gap-3">
               <button
+                type="button"
                 onClick={() => setIsRecording(!isRecording)}
                 className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${
-                  isRecording
-                    ? "bg-red-500 text-white animate-pulse"
-                    : "bg-muted text-muted-foreground hover:text-foreground"
+                  isRecording ? "bg-red-500 text-white animate-pulse" : "bg-muted text-muted-foreground hover:text-foreground"
                 }`}
               >
                 {isRecording ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
@@ -244,14 +306,21 @@ const ChatPage = () => {
                 placeholder={t("chat.placeholder")}
                 value={inputText}
                 onChange={(e) => setInputText(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && inputText.trim() && setInputText("")}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && inputText.trim()) {
+                    e.preventDefault();
+                    sendMessage();
+                  }
+                }}
                 className="flex-1 h-10"
               />
               <Button
+                type="button"
                 variant="hero"
                 size="icon"
                 className="w-10 h-10 rounded-full"
                 disabled={!inputText.trim()}
+                onClick={sendMessage}
               >
                 <Send className="w-4 h-4" />
               </Button>

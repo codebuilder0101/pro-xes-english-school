@@ -15,6 +15,8 @@ import { AuthSecurityModals } from "@/components/auth/AuthSecurityModals";
 import { useLanguage } from "@/i18n/LanguageContext";
 import type { TranslationKey } from "@/i18n/translations";
 import { signInSchema, type SignInValues } from "@/lib/authValidation";
+import { apiFetch, type ApiError } from "@/lib/api";
+import { setAccessToken, setLastLoginEmail } from "@/lib/session";
 
 function isTranslationKey(key: string): key is TranslationKey {
   return key.startsWith("auth.");
@@ -59,7 +61,6 @@ export default function SignInPage() {
 
   const onSubmit = async (data: SignInValues) => {
     clearErrors();
-    await new Promise((r) => setTimeout(r, 600));
     if (data.password.toLowerCase() === "network") {
       setError("root", { message: t("auth.error.network") });
       return;
@@ -68,7 +69,26 @@ export default function SignInPage() {
       setBanner(t("auth.signIn.invalid"));
       return;
     }
-    navigate("/auth/welcome", { replace: true, state: { from: "sign-in" } });
+    try {
+      const res = await apiFetch<{ token: string }>("/api/auth/login", {
+        method: "POST",
+        body: JSON.stringify({ email: data.email, password: data.password }),
+      });
+      setAccessToken(res.token);
+      setLastLoginEmail(data.email);
+      navigate("/auth/welcome", { replace: true, state: { from: "sign-in" } });
+    } catch (e) {
+      const err = e as ApiError;
+      if (err.status === 403 && err.code === "ACCOUNT_LOCKED") {
+        setBanner(t("auth.signIn.locked"));
+        return;
+      }
+      if (err.status === 401) {
+        setBanner(t("auth.signIn.invalid"));
+        return;
+      }
+      setError("root", { message: t("auth.error.network") });
+    }
   };
 
   const rootMessage = errors.root?.message;

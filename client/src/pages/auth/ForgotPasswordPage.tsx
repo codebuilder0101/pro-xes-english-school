@@ -9,6 +9,8 @@ import { AuthTextField } from "@/components/auth/AuthTextField";
 import { useLanguage } from "@/i18n/LanguageContext";
 import type { TranslationKey } from "@/i18n/translations";
 import { emailSchema } from "@/lib/authValidation";
+import { apiFetch } from "@/lib/api";
+import { setPasswordResetToken } from "@/lib/session";
 
 const schema = z.object({ email: emailSchema });
 type Values = z.infer<typeof schema>;
@@ -35,9 +37,17 @@ export default function ForgotPasswordPage() {
     return isTranslationKey(msg) ? t(msg) : msg;
   };
 
-  const onSubmit = async () => {
-    await new Promise((r) => setTimeout(r, 500));
-    navigate("/auth/check-email", { state: { flow: "reset" } });
+  const onSubmit = async (data: Values) => {
+    try {
+      const res = await apiFetch<{ dev?: { resetToken?: string } }>("/api/auth/forgot-password", {
+        method: "POST",
+        body: JSON.stringify({ email: data.email }),
+      });
+      if (res.dev?.resetToken) setPasswordResetToken(res.dev.resetToken);
+    } catch {
+      /* Avoid email enumeration; still continue to inbox guidance */
+    }
+    navigate("/auth/check-email", { state: { flow: "reset", email: data.email } });
   };
 
   return (
