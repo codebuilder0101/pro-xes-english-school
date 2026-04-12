@@ -1,0 +1,372 @@
+export type Language = "pt" | "en";
+
+export const translations = {
+  // Navbar
+  "nav.scenarios": { pt: "Cenários", en: "Scenarios" },
+  "nav.howItWorks": { pt: "Como funciona", en: "How it works" },
+  "nav.tutors": { pt: "Tutores", en: "Tutors" },
+  "nav.pricing": { pt: "Planos", en: "Plans" },
+  "nav.chat": { pt: "Chat", en: "Chat" },
+  "nav.login": { pt: "Entrar", en: "Sign in" },
+  "nav.cta": { pt: "Começar grátis", en: "Start free" },
+
+  // Hero
+  "hero.badge": { pt: "Aprenda inglês conectando pessoas do mundo todo", en: "Learn English connecting people worldwide" },
+  "hero.title.1": { pt: "Fale inglês com", en: "Speak English with" },
+  "hero.title.highlight": { pt: "confiança", en: "confidence" },
+  "hero.title.2": { pt: "em qualquer lugar", en: "anywhere" },
+  "hero.subtitle": {
+    pt: "Pratique conversação em cenários reais, como aeroportos, cafeterias, hotéis, restaurantes e muito mais. Falantes nativos, tutores nativos e uma comunidade que apoia você.",
+    en: "Practice conversation in real life scenarios such as airports, coffee shops, hotels, restaurants, and much more. Native speakers, native tutors, and a community that supports you.",
+  },
+  "hero.cta": { pt: "Começar agora — é grátis", en: "Start now — it's free" },
+  "hero.cta2": { pt: "Ver como funciona", en: "See how it works" },
+  "hero.social": { pt: "alunos já praticando", en: "students already practicing" },
+  "hero.tutorsOnline": { pt: "Tutores online", en: "Tutors online" },
+  "hero.panel.title": {
+    pt: "Conversação em inglês situacional",
+    en: "Situational English Conversation",
+  },
+  "hero.panel.imageAlt": {
+    pt: "Pessoas felizes conversando em viagens e passeios ao ar livre",
+    en: "Happy people chatting while traveling and enjoying outings outdoors",
+  },
+  "hero.panel.locations": {
+    pt: "Praia · Shopping · Museu · Barzinho · Aeroporto · Passeios…",
+    en: "Beach · Mall · Museum · Bar · Airport · Outings…",
+  },
+  "hero.panel.context.before": { pt: "Dentre outros ", en: "Among other " },
+  "hero.panel.context.highlight": { pt: "lugares", en: "places" },
+  "hero.panel.context.after": {
+    pt: " que você pode praticar seu inglês.",
+    en: " where you can practice your English.",
+  },
+  "hero.panel.slogan.before1": { pt: "Pratique se ", en: "Practice while " },
+  "hero.panel.slogan.bold1": { pt: "divertindo", en: "having fun" },
+  "hero.panel.slogan.mid": { pt: " e se divirta ", en: " and have fun " },
+  "hero.panel.slogan.bold2": { pt: "praticando", en: "practicing" },
+
+  // Scenarios
+  "scenarios.label": { pt: "CENÁRIOS REAIS", en: "REAL SCENARIOS" },
+  "scenarios.title": { pt: "Pratique em situações do dia a dia", en: "Practice in everyday situations" },
+  "scenarios.subtitle": {
+    pt: "Cada cenário simula conversas reais que você terá em viagens. O nível do diálogo irá se adaptar ao seu nível e corrigir em tempo real.",
+    en: "Each scenario simulates real conversations you will have while traveling. The dialogue level will adapt to your proficiency and correct you in real time.",
+  },
+  "scenarios.airport": { pt: "Aeroporto", en: "Airport" },
+  "scenarios.airport.sub": { pt: "Check-in, imigração e embarque", en: "Check-in, immigration & boarding" },
+  "scenarios.cafe": { pt: "Cafeteria", en: "Café" },
+  "scenarios.cafe.sub": { pt: "Peça seu café e converse", en: "Order your coffee and chat" },
+  "scenarios.shop": { pt: "Loja", en: "Shop" },
+  "scenarios.shop.sub": { pt: "Compras, tamanhos e preços", en: "Shopping, sizes and prices" },
+  "scenarios.hotel": { pt: "Hotel", en: "Hotel" },
+  "scenarios.hotel.sub": { pt: "Check-in e serviço de quarto", en: "Check-in and room service" },
+  "scenarios.restaurant": { pt: "Restaurante", en: "Restaurant" },
+  "scenarios.restaurant.sub": { pt: "Cardápio, pedidos e conta", en: "Menu, orders and bill" },
+  "scenarios.dialogues": { pt: "diálogos", en: "dialogues" },
+  "scenarios.practice": { pt: "Praticar", en: "Practice" },
+
+  // How it works
+  "how.label": { pt: "COMO FUNCIONA", en: "HOW IT WORKS" },
+  "how.title": { pt: "4 passos para falar inglês sem medo", en: "4 steps to speak English fearlessly" },
+  "how.step1.title": { pt: "Crie sua conta", en: "Create your account" },
+  "how.step1.desc": { pt: "Cadastre-se gratuitamente e personalize seu avatar de viajante.", en: "Sign up for free and customize your traveler avatar." },
+  "how.step2.title": { pt: "Escolha o cenário", en: "Choose a scenario" },
+  "how.step2.desc": { pt: "Aeroporto, café, hotel e outros. Escolha onde quer praticar.", en: "Airport, cafe, hotel, and others. Choose where you want to practice." },
+  "how.step3.title": { pt: "Converse com tutores e pessoas", en: "Chat with tutors and people" },
+  "how.step3.desc": { pt: "Diálogos dinâmicos que se adaptam ao seu nível. Sem roteiros fixos.", en: "Dynamic dialogues that adapt to your level. No fixed scripts." },
+  "how.step4.title": { pt: "Ganhe confiança", en: "Gain confidence" },
+  "how.step4.desc": { pt: "Acompanhe progresso, desbloqueie conquistas e evolua seu inglês.", en: "Track progress, unlock achievements and level up your English." },
+
+  // Tutors
+  "tutors.label": { pt: "TUTORES AO VIVO", en: "LIVE TUTORS" },
+  "tutors.title": { pt: "Converse com tutores reais quando quiser", en: "Chat with real tutors whenever you want" },
+  "tutors.subtitle": {
+    pt: "Sessões com tutores nativos e não-nativos. Escolha com quem quer aprimorar sua comunicação.",
+    en: "Sessions with native and non-native tutors. Choose who you want to practice your communication with.",
+  },
+  "tutors.native": { pt: "Nativo", en: "Native" },
+  "tutors.nonNative": { pt: "Não-nativo", en: "Non-native" },
+  "tutors.years": { pt: "anos", en: "y/o" },
+  "tutors.schedule": { pt: "Agendar aula", en: "Book a lesson" },
+
+  // Pricing
+  "pricing.label": { pt: "PLANOS", en: "PLANS" },
+  "pricing.title": { pt: "Invista no seu inglês por menos que um café por dia", en: "Invest in your English for less than a coffee a day" },
+  "pricing.subtitle": { pt: "Cancele quando quiser. Pague com cartão ou Pix.", en: "Cancel anytime. Pay with card or Pix." },
+  "pricing.monthly": { pt: "Mensal", en: "Monthly" },
+  "pricing.semester": { pt: "Semestral", en: "6 Months" },
+  "pricing.annual": { pt: "Anual", en: "Annual" },
+  "pricing.month": { pt: "/mês", en: "/mo" },
+  "pricing.popular": { pt: "Mais popular", en: "Most popular" },
+  "pricing.cta": { pt: "Começar agora", en: "Start now" },
+  "pricing.footer": {
+    pt: "Sessões com tutores cobradas à parte • Pagamento por tempo: mínimo 15 minutos",
+    en: "Tutor sessions charged separately • Pay per time: minimum 15 minutes",
+  },
+  "pricing.f.all_scenarios": { pt: "Todos os cenários de viagem", en: "All travel scenarios" },
+  "pricing.f.ai_unlimited": { pt: "Conversação ilimitada", en: "Unlimited conversation" },
+  "pricing.f.corrections": { pt: "Correções em tempo real", en: "Real-time corrections" },
+  "pricing.f.progress": { pt: "Progresso e conquistas", en: "Progress & achievements" },
+  "pricing.f.chat": { pt: "Chat com estudantes", en: "Student chat" },
+  "pricing.f.correction_writing_pronunciation": {
+    pt: "Recursos de correção para escrita e pronúncia",
+    en: "Correction features for writing and pronunciation",
+  },
+  "pricing.f.everything_monthly": { pt: "Tudo do plano Mensal", en: "Everything in Monthly" },
+  "pricing.f.priority": { pt: "Acesso prioritário a tutores", en: "Priority tutor access" },
+  "pricing.f.articles": { pt: "Artigos e conteúdo exclusivo", en: "Exclusive articles & content" },
+  "pricing.f.semester_free_tutor_30": {
+    pt: "1 sessão de 30min grátis com tutores/mês",
+    en: "1 free 30-min session with tutors/month",
+  },
+  "pricing.f.save35": { pt: "Economize 35%", en: "Save 35%" },
+  "pricing.f.everything_semester": { pt: "Tudo do plano Semestral", en: "Everything in 6 Months" },
+  "pricing.f.free_session": { pt: "2 sessão de 30min grátis com tutores/mês", en: "2 free 30 minute sessions with tutors per month" },
+  "pricing.f.certificate": { pt: "Certificado de progresso", en: "Progress certificate" },
+  "pricing.f.early_access": { pt: "Acesso antecipado a novidades", en: "Early access to new features" },
+  "pricing.f.save52": { pt: "Economize 52%", en: "Save 52%" },
+
+  // CTA
+  "cta.title": { pt: "Pronto para falar inglês sem medo?", en: "Ready to speak English fearlessly?" },
+  "cta.subtitle": { pt: "Comece agora e pratique em cenários reais. Sem compromisso, cancele quando quiser.", en: "Start now and practice in real scenarios. No commitment, cancel anytime." },
+  "cta.button": { pt: "Começar minha jornada", en: "Start my journey" },
+
+  // Footer
+  "footer.desc": {
+    pt: "Aprenda inglês conectando pessoas do mundo todo.",
+    en: "Learn English connecting people worldwide.",
+  },
+  "footer.platform": { pt: "Plataforma", en: "Platform" },
+  "footer.support": { pt: "Suporte", en: "Support" },
+  "footer.help": { pt: "Central de ajuda", en: "Help center" },
+  "footer.contact": { pt: "Contato", en: "Contact" },
+  "footer.faq": { pt: "FAQ", en: "FAQ" },
+  "footer.legal": { pt: "Legal", en: "Legal" },
+  "footer.terms": { pt: "Termos de uso", en: "Terms of service" },
+  "footer.privacy": { pt: "Privacidade", en: "Privacy" },
+  "footer.rights": { pt: "Todos os direitos reservados.", en: "All rights reserved." },
+  "footer.tagline": { pt: "Idioma de forma diferente", en: "Language in a different way" },
+
+  // Chat page
+  "chat.title": { pt: "Chat da Comunidade", en: "Community Chat" },
+  "chat.subtitle": { pt: "Conecte-se com estudantes e tutores do mundo todo", en: "Connect with students and tutors worldwide" },
+  "chat.rooms": { pt: "Salas", en: "Rooms" },
+  "chat.direct": { pt: "Direto", en: "Direct" },
+  "chat.tutors": { pt: "Tutores", en: "Tutors" },
+  "chat.placeholder": { pt: "Digite sua mensagem...", en: "Type your message..." },
+  "chat.send": { pt: "Enviar", en: "Send" },
+  "chat.voiceHint": { pt: "Pressione Enter para enviar, ou clique no microfone para usar voz", en: "Press Enter to send, or click the microphone to use voice input" },
+  "chat.listen": { pt: "Ouvir", en: "Listen" },
+  "chat.online": { pt: "online", en: "online" },
+  "chat.members": { pt: "membros", en: "members" },
+  "chat.searchPlaceholder": { pt: "Buscar conversas...", en: "Search conversations..." },
+
+  // Language switcher
+  "lang.pt": { pt: "Português", en: "Portuguese" },
+  "lang.en": { pt: "English", en: "English" },
+
+  // Auth — shared
+  "auth.brandSubtitle": { pt: "X English School", en: "X English School" },
+  "auth.or": { pt: "ou", en: "or" },
+  "auth.backSignIn": { pt: "Voltar para entrar", en: "Back to sign in" },
+  "auth.social.google": { pt: "Continuar com Google", en: "Continue with Google" },
+  "auth.social.apple": { pt: "Continuar com Apple", en: "Continue with Apple" },
+  "auth.social.facebook": { pt: "Continuar com Facebook", en: "Continue with Facebook" },
+  "auth.social.helper": {
+    pt: "Se você já tem conta XES, vamos vincular ao provedor quando o e-mail for o mesmo.",
+    en: "If you already have an XES account, we’ll link it when the email matches your login.",
+  },
+  "auth.passkey.cta": { pt: "Entrar com chave de acesso", en: "Sign in with passkey" },
+  "auth.passkey.helper": { pt: "Em breve — espaço reservado na interface.", en: "Coming soon — UI placeholder." },
+
+  // Sign in
+  "auth.signIn.title": { pt: "Entrar", en: "Sign in" },
+  "auth.signIn.subtitle": {
+    pt: "Acesse sua conta de prática de inglês.",
+    en: "Access your English practice account.",
+  },
+  "auth.signIn.emailLabel": { pt: "E-mail", en: "Email" },
+  "auth.signIn.passwordLabel": { pt: "Senha", en: "Password" },
+  "auth.signIn.forgot": { pt: "Esqueceu a senha?", en: "Forgot password?" },
+  "auth.signIn.submit": { pt: "Entrar", en: "Sign in" },
+  "auth.signIn.switch": { pt: "Não tem conta? Criar conta", en: "Don’t have an account? Sign up" },
+  "auth.signIn.magicLink": { pt: "Enviar link de acesso por e-mail", en: "Email me a sign-in link" },
+  "auth.signIn.showPassword": { pt: "Mostrar senha", en: "Show password" },
+  "auth.signIn.hidePassword": { pt: "Ocultar senha", en: "Hide password" },
+  "auth.signIn.invalid": {
+    pt: "E-mail ou senha inválidos.",
+    en: "Invalid email or password.",
+  },
+  "auth.signIn.locked": {
+    pt: "Muitas tentativas. Tente novamente mais tarde.",
+    en: "Too many attempts. Try again later.",
+  },
+  "auth.signIn.demoStates": { pt: "Estados de protótipo (UI)", en: "Prototype UI states" },
+  "auth.signIn.demoInvalid": { pt: "Simular falha de login", en: "Simulate failed sign-in" },
+  "auth.signIn.demoLocked": { pt: "Simular bloqueio", en: "Simulate lockout" },
+
+  // Sign up
+  "auth.signUp.title": { pt: "Criar conta", en: "Create account" },
+  "auth.signUp.subtitle": {
+    pt: "Comece a praticar inglês em cenários da vida real.",
+    en: "Start practicing English in real-life scenarios.",
+  },
+  "auth.signUp.nameLabel": { pt: "Nome", en: "Name" },
+  "auth.signUp.nameOptional": { pt: "opcional", en: "optional" },
+  "auth.signUp.emailLabel": { pt: "E-mail", en: "Email" },
+  "auth.signUp.passwordLabel": { pt: "Senha", en: "Password" },
+  "auth.signUp.confirmLabel": { pt: "Confirmar senha", en: "Confirm password" },
+  "auth.signUp.terms": { pt: "Aceito os", en: "I agree to the" },
+  "auth.signUp.termsLink": { pt: "Termos", en: "Terms" },
+  "auth.signUp.and": { pt: "e a", en: "and" },
+  "auth.signUp.privacyLink": { pt: "Política de Privacidade", en: "Privacy Policy" },
+  "auth.signUp.newsletter": { pt: "Quero receber dicas e novidades por e-mail", en: "Email me tips and product updates" },
+  "auth.signUp.submit": { pt: "Criar conta", en: "Create account" },
+  "auth.signUp.switch": { pt: "Já tem conta? Entrar", en: "Already have an account? Sign in" },
+  "auth.signUp.reqTitle": { pt: "A senha deve ter:", en: "Your password must have:" },
+  "auth.signUp.reqLength": { pt: "Pelo menos 8 caracteres", en: "At least 8 characters" },
+  "auth.signUp.reqMix": { pt: "Letras e números", en: "Letters and numbers" },
+  "auth.signUp.strength.weak": { pt: "Fraca", en: "Weak" },
+  "auth.signUp.strength.fair": { pt: "Razoável", en: "Fair" },
+  "auth.signUp.strength.strong": { pt: "Forte", en: "Strong" },
+  "auth.signUp.strengthLabel": { pt: "Força da senha", en: "Password strength" },
+
+  // Validation (shared)
+  "auth.error.required": { pt: "Este campo é obrigatório.", en: "This field is required." },
+  "auth.error.email": { pt: "Digite um e-mail válido.", en: "Enter a valid email address." },
+  "auth.error.passwordShort": { pt: "A senha é muito curta.", en: "Password is too short." },
+  "auth.error.passwordWeak": { pt: "A senha é muito fraca.", en: "Password is too weak." },
+  "auth.error.passwordMismatch": { pt: "As senhas não coincidem.", en: "Passwords do not match." },
+  "auth.error.terms": { pt: "Aceite os termos para continuar.", en: "Accept the terms to continue." },
+  "auth.error.network": {
+    pt: "Não foi possível conectar. Verifique sua rede e tente de novo.",
+    en: "We couldn’t connect. Check your network and try again.",
+  },
+
+  // Forgot / check email / reset
+  "auth.forgot.title": { pt: "Esqueceu a senha?", en: "Forgot password?" },
+  "auth.forgot.subtitle": {
+    pt: "Informe seu e-mail e enviaremos um link para redefinir a senha.",
+    en: "Enter your email and we’ll send you a link to reset your password.",
+  },
+  "auth.forgot.submit": { pt: "Enviar link de redefinição", en: "Send reset link" },
+  "auth.forgot.success": {
+    pt: "Se este e-mail estiver cadastrado, enviamos um link de redefinição.",
+    en: "If this email is registered, we’ve sent a reset link.",
+  },
+
+  "auth.checkEmail.title": { pt: "Confira seu e-mail", en: "Check your inbox" },
+  "auth.checkEmail.body": {
+    pt: "Pode levar alguns minutos. Verifique também a pasta de spam ou lixo eletrônico.",
+    en: "It may take a few minutes. Check your spam or junk folder too.",
+  },
+  "auth.checkEmail.resend": { pt: "Reenviar e-mail", en: "Resend email" },
+  "auth.checkEmail.other": { pt: "Usar outro e-mail", en: "Use another email" },
+  "auth.checkEmail.spamHint": { pt: "Dica: alguns provedores atrasam mensagens automáticas.", en: "Tip: some providers delay automated messages." },
+
+  "auth.reset.title": { pt: "Redefinir senha", en: "Reset password" },
+  "auth.reset.subtitle": { pt: "Escolha uma nova senha para sua conta.", en: "Choose a new password for your account." },
+  "auth.reset.submit": { pt: "Atualizar senha", en: "Update password" },
+
+  "auth.passwordUpdated.title": { pt: "Senha atualizada", en: "Password updated" },
+  "auth.passwordUpdated.body": {
+    pt: "Sua senha foi alterada. Você já pode entrar com a nova senha.",
+    en: "Your password was changed. You can sign in with your new password.",
+  },
+  "auth.passwordUpdated.cta": { pt: "Ir para entrar", en: "Back to sign in" },
+
+  "auth.linkError.expired.title": { pt: "Link expirado", en: "Link expired" },
+  "auth.linkError.expired.body": {
+    pt: "Este link de redefinição não é mais válido. Solicite um novo.",
+    en: "This reset link is no longer valid. Request a new one.",
+  },
+  "auth.linkError.invalid.title": { pt: "Link inválido", en: "Invalid link" },
+  "auth.linkError.invalid.body": {
+    pt: "Não conseguimos validar este link. Solicite um novo e-mail de redefinição.",
+    en: "We couldn’t validate this link. Request a new reset email.",
+  },
+
+  // Verify email
+  "auth.verify.title": { pt: "Verifique seu e-mail", en: "Verify your email" },
+  "auth.verify.body": {
+    pt: "Enviamos um link de confirmação. Abra-o para ativar sua conta.",
+    en: "We sent a confirmation link. Open it to activate your account.",
+  },
+  "auth.verify.resend": { pt: "Reenviar confirmação", en: "Resend confirmation" },
+  "auth.verify.done": { pt: "Já confirmei", en: "I’ve verified" },
+
+  // Magic link
+  "auth.magic.title": { pt: "Link de acesso", en: "Sign-in link" },
+  "auth.magic.subtitle": {
+    pt: "Enviaremos um link seguro para você entrar sem senha.",
+    en: "We’ll email you a secure link to sign in without a password.",
+  },
+  "auth.magic.submit": { pt: "Enviar link", en: "Send link" },
+  "auth.magic.success": {
+    pt: "Se este e-mail estiver cadastrado, você receberá um link em instantes.",
+    en: "If this email is registered, you’ll receive a link shortly.",
+  },
+
+  // OTP / MFA
+  "auth.otp.title": { pt: "Código de verificação", en: "Verification code" },
+  "auth.otp.subtitle": {
+    pt: "Digite o código de 6 dígitos enviado ao seu e-mail ou app autenticador.",
+    en: "Enter the 6-digit code from your email or authenticator app.",
+  },
+  "auth.otp.verify": { pt: "Verificar", en: "Verify" },
+  "auth.otp.trust": { pt: "Confiar neste dispositivo", en: "Trust this device" },
+  "auth.otp.trustHint": {
+    pt: "Marque para pedir menos códigos neste aparelho no futuro.",
+    en: "Ask for fewer codes on this device in the future.",
+  },
+
+  "auth.mfaSetup.title": { pt: "Proteja sua conta", en: "Protect your account" },
+  "auth.mfaSetup.subtitle": {
+    pt: "Adicione verificação em duas etapas para quando o login real estiver disponível.",
+    en: "Add two-step verification for when real sign-in is enabled.",
+  },
+  "auth.mfaSetup.cta": { pt: "Configurar depois", en: "Set up later" },
+  "auth.mfaSetup.primary": { pt: "Começar configuração", en: "Start setup" },
+
+  "auth.mfaChallenge.title": { pt: "Confirme que é você", en: "Confirm it’s you" },
+  "auth.mfaChallenge.subtitle": {
+    pt: "Insira o código do seu app autenticador para continuar.",
+    en: "Enter the code from your authenticator app to continue.",
+  },
+
+  // Welcome / onboarding
+  "auth.welcome.title": { pt: "Bem-vindo à XES!", en: "Welcome to XES!" },
+  "auth.welcome.body": {
+    pt: "Sua conta está pronta. Escolha um primeiro cenário ou explore o chat da comunidade.",
+    en: "Your account is ready. Pick a first scenario or explore the community chat.",
+  },
+  "auth.welcome.scenarios": { pt: "Ver cenários", en: "Browse scenarios" },
+  "auth.welcome.chat": { pt: "Ir para o chat", en: "Go to chat" },
+  "auth.welcome.home": { pt: "Voltar ao início", en: "Back to home" },
+
+  // Security modals (UI-only)
+  "auth.session.title": { pt: "Sessão expirada", en: "Session timed out" },
+  "auth.session.body": {
+    pt: "Por segurança, sua sessão encerrou. Entre novamente para continuar.",
+    en: "For your security, your session ended. Sign in again to continue.",
+  },
+  "auth.session.signIn": { pt: "Entrar de novo", en: "Sign in again" },
+
+  "auth.reauth.title": { pt: "Confirme sua identidade", en: "Confirm your identity" },
+  "auth.reauth.body": {
+    pt: "Esta ação é sensível. Digite sua senha para continuar.",
+    en: "This action is sensitive. Enter your password to continue.",
+  },
+  "auth.reauth.submit": { pt: "Confirmar", en: "Confirm" },
+  "auth.reauth.cancel": { pt: "Cancelar", en: "Cancel" },
+
+  "auth.suspicious.title": { pt: "Verificação extra", en: "Extra verification" },
+  "auth.suspicious.body": {
+    pt: "Notamos um acesso incomum. Confirme o código que enviamos para seguir.",
+    en: "We noticed unusual activity. Confirm the code we sent to continue.",
+  },
+  "auth.security.openDemo": { pt: "Modais de segurança (protótipo)", en: "Security modals (prototype)" },
+} as const;
+
+export type TranslationKey = keyof typeof translations;
