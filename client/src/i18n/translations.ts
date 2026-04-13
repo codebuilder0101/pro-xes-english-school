@@ -41,11 +41,7 @@ export const translations = {
     pt: " que você pode praticar seu inglês.",
     en: " where you can practice your English.",
   },
-  "hero.panel.slogan.before1": { pt: "Pratique se ", en: "Practice while " },
-  "hero.panel.slogan.bold1": { pt: "divertindo", en: "having fun" },
-  "hero.panel.slogan.mid": { pt: " e se divirta ", en: " and have fun " },
-  "hero.panel.slogan.bold2": { pt: "praticando", en: "practicing" },
-
+  "hero.panel.slogan.before1": { pt: "Pratique se divertindo e se divirta praticando", en: "Practice while having fun and have fun practicing" },
   // Scenarios
   "scenarios.label": { pt: "CENÁRIOS REAIS", en: "REAL SCENARIOS" },
   "scenarios.title": { pt: "Pratique em situações do dia a dia", en: "Practice in everyday situations" },

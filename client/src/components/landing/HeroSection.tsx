@@ -73,28 +73,25 @@ const HeroSection = () => {
                 decoding="async"
                 className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.03]"
               />
+              {/* Darken top-left (sky) and bottom edge so white copy stays readable; photo unchanged underneath */}
               <div
-                className="absolute inset-0 bg-gradient-to-t from-black/88 via-black/45 to-emerald-950/25"
+                className="absolute inset-0 bg-gradient-to-b from-black/82 via-black/30 via-50% to-black/75"
                 aria-hidden
               />
-              <div className="absolute inset-0 bg-[radial-gradient(120%_80%_at_20%_0%,rgba(16,185,129,0.22),transparent_55%)]" aria-hidden />
-              <div className="relative z-10 flex min-h-[300px] md:min-h-[380px] lg:min-h-[420px] flex-col justify-end p-7 md:p-10 text-white">
-                <p className="mb-3 inline-flex max-w-fit items-center rounded-full border border-white/20 bg-white/10 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-white/90 backdrop-blur-md shadow-sm sm:text-[11px]">
+              <div
+                className="absolute inset-0 bg-[radial-gradient(95%_65%_at_0%_0%,rgba(0,0,0,0.55),transparent_58%)]"
+                aria-hidden
+              />
+              <div className="absolute inset-0 bg-[radial-gradient(120%_80%_at_20%_0%,rgba(16,185,129,0.18),transparent_55%)]" aria-hidden />
+              <div className="relative z-10 flex min-h-[300px] md:min-h-[380px] lg:min-h-[420px] flex-col items-start justify-start text-left p-7 pt-8 md:p-10 md:pt-10 text-white">
+                <p className="mb-3 inline-flex max-w-fit items-center rounded-full border border-white/25 bg-black/35 px-3 py-1 text-[8px] font-bold uppercase tracking-[0.1em] text-white backdrop-blur-md shadow-sm sm:text-[11px] [text-shadow:0_1px_8px_rgba(0,0,0,0.6)]">
                   {t("hero.panel.locations")}
                 </p>
-                <h2 className="text-2xl font-black leading-tight tracking-tight text-white drop-shadow-md md:text-3xl lg:text-[2rem]">
+                <h2 className="max-w-[min(100%,12rem)] text-xl font-black leading-tight tracking-tight text-white drop-shadow-[0_2px_16px_rgba(0,0,0,0.75)] md:max-w-md md:text-xl lg:text-[1.5rem]">
                   {t("hero.panel.title")}
                 </h2>
-                <p className="mt-4 max-w-xl text-sm leading-relaxed text-white/90 md:text-base [text-shadow:0_1px_12px_rgba(0,0,0,0.45)]">
-                  {t("hero.panel.context.before")}
-                  <span className="font-bold text-white">{t("hero.panel.context.highlight")}</span>
-                  {t("hero.panel.context.after")}
-                </p>
-                <p className="mt-6 max-w-xl text-base font-black leading-snug text-white md:text-lg lg:text-xl [text-shadow:0_2px_16px_rgba(0,0,0,0.5)]">
+                <p className="mt-4 max-w-md text-base font-black leading-snug text-white md:mt-5 md:text-lg lg:text-xl [text-shadow:0_2px_18px_rgba(0,0,0,0.8)]">
                   {t("hero.panel.slogan.before1")}
-                  <span className="text-secondary">{t("hero.panel.slogan.bold1")}</span>
-                  {t("hero.panel.slogan.mid")}
-                  <span className="text-secondary">{t("hero.panel.slogan.bold2")}</span>
                 </p>
               </div>
             </div>
