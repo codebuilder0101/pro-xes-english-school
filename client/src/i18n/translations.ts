@@ -12,7 +12,7 @@ export const translations = {
 
   // Hero
   "hero.badge": { pt: "Aprenda inglês conectando pessoas do mundo todo", en: "Learn English connecting people worldwide" },
-  "hero.title.1": { pt: "Fale inglês", en: "Speak English with" },
+  "hero.title.1": { pt: "Fale inglês com", en: "Speak English with" },
   "hero.title.highlight": { pt: "confiança", en: "confidence" },
   "hero.title.2": { pt: "em qualquer lugar", en: "anywhere" },
   "hero.subtitle": {

@@ -12,7 +12,11 @@
       "Bash(py -3.12 ./check_vps.py)",
       "Bash(gh auth:*)",
       "Bash(py -3.12 deploy/setup_vps.py)",
-      "Bash(py -3.12 deploy/verify_vps.py)"
+      "Bash(py -3.12 deploy/verify_vps.py)",
+      "Bash(py -3.12 deploy/cleanup_and_finish.py)",
+      "Bash(git add:*)",
+      "Bash(git commit -m 'ci: add GitHub Actions workflow for auto-deploy to VPS:*)",
+      "Bash(git push:*)"
     ]
   }
 }
