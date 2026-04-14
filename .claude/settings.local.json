@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python -c \"import paramiko; print\\(paramiko.__version__\\)\")",
+      "Bash(pip install:*)",
+      "Bash(where ssh:*)",
+      "Bash(where sshpass:*)",
+      "Bash(py -0)",
+      "Bash(where python:*)",
+      "Bash(py -3.12 -m pip install paramiko --quiet)",
+      "Bash(py -3.12 c:\\\\temp_github\\\\pro-xes-english-study\\\\check_vps.py)",
+      "Bash(py -3.12 ./check_vps.py)",
+      "Bash(gh auth:*)",
+      "Bash(py -3.12 deploy/setup_vps.py)",
+      "Bash(py -3.12 deploy/verify_vps.py)"
+    ]
+  }
+}
