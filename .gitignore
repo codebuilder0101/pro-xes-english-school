@@ -1,0 +1,13 @@
+node_modules/
+dist/
+.env
+.env.*
+*.log
+
+# Deploy artifacts contain VPS credentials / private keys — keep local only
+deploy/gh_deploy_key
+deploy/gh_deploy_key.pub
+deploy/setup_vps.py
+deploy/cleanup_and_finish.py
+deploy/verify_vps.py
+check_vps.py
