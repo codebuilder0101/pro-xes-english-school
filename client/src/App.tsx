@@ -33,6 +33,7 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Index />} />
+            <Route path="/dashboard" element={<Index />} />
             <Route path="/chat" element={<ChatPage />} />
             <Route path="/auth" element={<AuthLayout />}>
               <Route index element={<Navigate to="/auth/sign-in" replace />} />

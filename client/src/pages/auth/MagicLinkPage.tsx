@@ -54,7 +54,7 @@ export default function MagicLinkPage() {
           body: JSON.stringify({ token: res.dev.magicToken }),
         });
         setAccessToken(session.token);
-        navigate("/auth/welcome", { replace: true, state: { from: "magic-link" } });
+        navigate("/dashboard", { replace: true });
         return;
       }
       setDone(true);

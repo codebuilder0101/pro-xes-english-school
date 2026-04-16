@@ -76,7 +76,7 @@ export default function SignInPage() {
       });
       setAccessToken(res.token);
       setLastLoginEmail(data.email);
-      navigate("/auth/welcome", { replace: true, state: { from: "sign-in" } });
+      navigate("/dashboard", { replace: true });
     } catch (e) {
       const err = e as ApiError;
       if (err.status === 403 && err.code === "ACCOUNT_LOCKED") {

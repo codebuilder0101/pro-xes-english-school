@@ -48,7 +48,7 @@ export default function VerifyEmailPage() {
         body: JSON.stringify({ token }),
       });
       clearEmailVerificationToken();
-      navigate("/auth/welcome", { replace: true, state: { from: "verify" } });
+      navigate("/dashboard", { replace: true });
     } catch (e) {
       const err = e as ApiError;
       if (err.code === "INVALID_TOKEN") {

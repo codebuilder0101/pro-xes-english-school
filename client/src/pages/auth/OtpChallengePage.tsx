@@ -56,7 +56,7 @@ export default function OtpChallengePage() {
           method: "POST",
           body: JSON.stringify({ sessionId, code: value }),
         });
-        navigate("/auth/welcome", { replace: true, state: { from: "otp" } });
+        navigate("/dashboard", { replace: true });
       } catch (err) {
         const e = err as ApiError;
         setVerifyError(e.message || t("auth.error.network"));

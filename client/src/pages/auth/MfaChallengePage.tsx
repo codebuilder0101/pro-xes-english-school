@@ -36,7 +36,7 @@ export default function MfaChallengePage() {
           body: JSON.stringify({ email, code: value }),
         });
         setAccessToken(res.token);
-        navigate("/auth/welcome", { replace: true, state: { from: "mfa" } });
+        navigate("/dashboard", { replace: true });
       } catch (err) {
         const ex = err as ApiError;
         setError(ex.message || t("auth.error.network"));
