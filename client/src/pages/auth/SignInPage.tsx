@@ -16,7 +16,7 @@ import { useLanguage } from "@/i18n/LanguageContext";
 import type { TranslationKey } from "@/i18n/translations";
 import { signInSchema, type SignInValues } from "@/lib/authValidation";
 import { apiFetch, type ApiError } from "@/lib/api";
-import { setAccessToken, setLastLoginEmail } from "@/lib/session";
+import { setAccessToken, setLastLoginEmail, setPendingSignupEmail } from "@/lib/session";
 
 function isTranslationKey(key: string): key is TranslationKey {
   return key.startsWith("auth.");
@@ -81,6 +81,15 @@ export default function SignInPage() {
       const err = e as ApiError;
       if (err.status === 403 && err.code === "ACCOUNT_LOCKED") {
         setBanner(t("auth.signIn.locked"));
+        return;
+      }
+      if (err.status === 403 && err.code === "EMAIL_NOT_VERIFIED") {
+        setPendingSignupEmail(data.email);
+        apiFetch("/api/auth/resend-verification", {
+          method: "POST",
+          body: JSON.stringify({ email: data.email }),
+        }).catch(() => undefined);
+        navigate("/auth/verify-email", { replace: true });
         return;
       }
       if (err.status === 401) {

@@ -9,6 +9,12 @@ import { signAccessToken } from "../authTokens.js";
 import type { AuthedRequest } from "../middleware/requireAuth.js";
 import { requireAuth } from "../middleware/requireAuth.js";
 import type { StoredUser } from "../types.js";
+import { sendVerificationEmail, sendPasswordResetEmail, sendMagicLinkEmail, sendOtpEmail } from "../mailer.js";
+
+const isProd = process.env.NODE_ENV === "production";
+const mailerLive = Boolean(process.env.RESEND_API_KEY);
+// Only expose tokens in the API response when mail isn't actually being sent (local dev without Resend key).
+const exposeDevTokens = !isProd && !mailerLive;
 
 const router = Router();
 
@@ -59,31 +65,27 @@ router.post("/register", async (req, res) => {
     return;
   }
 
-  if (findUserByEmail(body.data.email)) {
+  if (await findUserByEmail(body.data.email)) {
     sendError(res, 409, "EMAIL_IN_USE", "Email is already registered");
     return;
   }
 
   const passwordHash = await bcrypt.hash(body.data.password, 10);
-  const id = token();
-  const user: StoredUser = {
-    id,
-    email: body.data.email.toLowerCase(),
+  const user = await insertUser({
+    email: body.data.email,
     passwordHash,
     name: body.data.name,
     newsletter: body.data.newsletter,
-    emailVerified: false,
     locked: body.data.email.toLowerCase() === "locked@example.com",
-    createdAt: new Date().toISOString(),
-  };
-  insertUser(user);
+  });
 
   const verifyToken = token();
-  memory.verifyTokens.set(verifyToken, { userId: id, expires: Date.now() + 1000 * 60 * 60 * 24 });
+  memory.verifyTokens.set(verifyToken, { userId: user.id, expires: Date.now() + 1000 * 60 * 60 * 24 });
+  sendVerificationEmail(user.email, verifyToken).catch((e) => console.error(e));
 
   res.status(201).json({
     user: publicUser(user),
-    dev: { verificationToken: verifyToken },
+    ...(exposeDevTokens ? { dev: { verificationToken: verifyToken } } : {}),
   });
 });
 
@@ -94,7 +96,7 @@ router.post("/login", async (req, res) => {
     return;
   }
 
-  const user = findUserByEmail(body.data.email);
+  const user = await findUserByEmail(body.data.email);
   if (!user) {
     sendError(res, 401, "INVALID_CREDENTIALS", "Invalid email or password");
     return;
@@ -110,6 +112,11 @@ router.post("/login", async (req, res) => {
     return;
   }
 
+  if (!user.emailVerified) {
+    sendError(res, 403, "EMAIL_NOT_VERIFIED", "Please verify your email before signing in");
+    return;
+  }
+
   const accessToken = signAccessToken(user.id);
   res.json({
     token: accessToken,
@@ -117,8 +124,8 @@ router.post("/login", async (req, res) => {
   });
 });
 
-router.get("/me", requireAuth, (req: AuthedRequest, res) => {
-  const user = findUserById(req.userId!);
+router.get("/me", requireAuth, async (req: AuthedRequest, res) => {
+  const user = await findUserById(req.userId!);
   if (!user) {
     sendError(res, 404, "NOT_FOUND", "User not found");
     return;
@@ -126,7 +133,7 @@ router.get("/me", requireAuth, (req: AuthedRequest, res) => {
   res.json({ user: publicUser(user) });
 });
 
-router.post("/verify-email", (req, res) => {
+router.post("/verify-email", async (req, res) => {
   const body = z.object({ token: z.string().min(10) }).safeParse(req.body);
   if (!body.success) {
     sendError(res, 400, "VALIDATION_ERROR", "Token required");
@@ -138,8 +145,8 @@ router.post("/verify-email", (req, res) => {
     return;
   }
   memory.verifyTokens.delete(body.data.token);
-  updateUser(entry.userId, { emailVerified: true });
-  const user = findUserById(entry.userId);
+  await updateUser(entry.userId, { emailVerified: true });
+  const user = await findUserById(entry.userId);
   if (!user) {
     sendError(res, 404, "NOT_FOUND", "User not found");
     return;
@@ -147,13 +154,13 @@ router.post("/verify-email", (req, res) => {
   res.json({ user: publicUser(user) });
 });
 
-router.post("/resend-verification", (req, res) => {
+router.post("/resend-verification", async (req, res) => {
   const body = z.object({ email: emailSchema }).safeParse(req.body);
   if (!body.success) {
     sendError(res, 400, "VALIDATION_ERROR", "Invalid email");
     return;
   }
-  const user = findUserByEmail(body.data.email);
+  const user = await findUserByEmail(body.data.email);
   if (!user) {
     res.json({ ok: true });
     return;
@@ -164,20 +171,22 @@ router.post("/resend-verification", (req, res) => {
   }
   const verifyToken = token();
   memory.verifyTokens.set(verifyToken, { userId: user.id, expires: Date.now() + 1000 * 60 * 60 * 24 });
-  res.json({ ok: true, dev: { verificationToken: verifyToken } });
+  sendVerificationEmail(user.email, verifyToken).catch((e) => console.error(e));
+  res.json({ ok: true, ...(exposeDevTokens ? { dev: { verificationToken: verifyToken } } : {}) });
 });
 
-router.post("/forgot-password", (req, res) => {
+router.post("/forgot-password", async (req, res) => {
   const body = z.object({ email: emailSchema }).safeParse(req.body);
   if (!body.success) {
     sendError(res, 400, "VALIDATION_ERROR", "Invalid email");
     return;
   }
-  const user = findUserByEmail(body.data.email);
+  const user = await findUserByEmail(body.data.email);
   if (user) {
     const resetToken = token();
     memory.resetTokens.set(resetToken, { userId: user.id, expires: Date.now() + 1000 * 60 * 60 });
-    res.json({ ok: true, dev: { resetToken } });
+    sendPasswordResetEmail(user.email, resetToken).catch((e) => console.error(e));
+    res.json({ ok: true, ...(exposeDevTokens ? { dev: { resetToken } } : {}) });
     return;
   }
   res.json({ ok: true });
@@ -201,7 +210,7 @@ router.post("/reset-password", async (req, res) => {
   }
   memory.resetTokens.delete(body.data.token);
   const passwordHash = await bcrypt.hash(body.data.password, 10);
-  updateUser(entry.userId, { passwordHash });
+  await updateUser(entry.userId, { passwordHash });
   res.json({ ok: true });
 });
 
@@ -220,23 +229,24 @@ router.get("/reset-password/status", (req, res) => {
   res.json({ ok: true });
 });
 
-router.post("/magic-link", (req, res) => {
+router.post("/magic-link", async (req, res) => {
   const body = z.object({ email: emailSchema }).safeParse(req.body);
   if (!body.success) {
     sendError(res, 400, "VALIDATION_ERROR", "Invalid email");
     return;
   }
-  const user = findUserByEmail(body.data.email);
+  const user = await findUserByEmail(body.data.email);
   if (!user) {
     res.json({ ok: true });
     return;
   }
   const magic = token();
   memory.magicTokens.set(magic, { email: user.email, expires: Date.now() + 1000 * 60 * 30 });
-  res.json({ ok: true, dev: { magicToken: magic } });
+  sendMagicLinkEmail(user.email, magic).catch((e) => console.error(e));
+  res.json({ ok: true, ...(exposeDevTokens ? { dev: { magicToken: magic } } : {}) });
 });
 
-router.post("/magic-link/consume", (req, res) => {
+router.post("/magic-link/consume", async (req, res) => {
   const body = z.object({ token: z.string().min(10) }).safeParse(req.body);
   if (!body.success) {
     sendError(res, 400, "VALIDATION_ERROR", "Token required");
@@ -248,7 +258,7 @@ router.post("/magic-link/consume", (req, res) => {
     return;
   }
   memory.magicTokens.delete(body.data.token);
-  const user = findUserByEmail(entry.email);
+  const user = await findUserByEmail(entry.email);
   if (!user) {
     sendError(res, 404, "NOT_FOUND", "User not found");
     return;
@@ -257,13 +267,13 @@ router.post("/magic-link/consume", (req, res) => {
   res.json({ token: accessToken, user: publicUser(user) });
 });
 
-router.post("/otp/start", (req, res) => {
+router.post("/otp/start", async (req, res) => {
   const body = z.object({ email: emailSchema }).safeParse(req.body);
   if (!body.success) {
     sendError(res, 400, "VALIDATION_ERROR", "Invalid email");
     return;
   }
-  const user = findUserByEmail(body.data.email);
+  const user = await findUserByEmail(body.data.email);
   if (!user) {
     sendError(res, 404, "NOT_FOUND", "No account for this email");
     return;
@@ -275,10 +285,11 @@ router.post("/otp/start", (req, res) => {
     code,
     expires: Date.now() + 1000 * 60 * 10,
   });
-  res.json({ sessionId, dev: { code } });
+  sendOtpEmail(user.email, code).catch((e) => console.error(e));
+  res.json({ sessionId, ...(exposeDevTokens ? { dev: { code } } : {}) });
 });
 
-router.post("/otp/verify", (req, res) => {
+router.post("/otp/verify", async (req, res) => {
   const body = z.object({ sessionId: z.string().min(10), code: z.string().length(6) }).safeParse(req.body);
   if (!body.success) {
     sendError(res, 400, "VALIDATION_ERROR", "sessionId and 6-digit code required");
@@ -294,7 +305,7 @@ router.post("/otp/verify", (req, res) => {
     return;
   }
   memory.otpSessions.delete(body.data.sessionId);
-  const user = findUserByEmail(entry.email);
+  const user = await findUserByEmail(entry.email);
   if (!user) {
     sendError(res, 404, "NOT_FOUND", "User not found");
     return;
@@ -302,8 +313,8 @@ router.post("/otp/verify", (req, res) => {
   res.json({ ok: true });
 });
 
-router.post("/mfa/setup", requireAuth, (req: AuthedRequest, res) => {
-  const user = findUserById(req.userId!);
+router.post("/mfa/setup", requireAuth, async (req: AuthedRequest, res) => {
+  const user = await findUserById(req.userId!);
   if (!user) {
     sendError(res, 404, "NOT_FOUND", "User not found");
     return;
@@ -313,13 +324,13 @@ router.post("/mfa/setup", requireAuth, (req: AuthedRequest, res) => {
   res.json({ secret, otpauthUrl });
 });
 
-router.post("/mfa/activate", requireAuth, (req: AuthedRequest, res) => {
+router.post("/mfa/activate", requireAuth, async (req: AuthedRequest, res) => {
   const body = z.object({ secret: z.string().min(10), code: z.string().min(6).max(8) }).safeParse(req.body);
   if (!body.success) {
     sendError(res, 400, "VALIDATION_ERROR", "secret and code required");
     return;
   }
-  const user = findUserById(req.userId!);
+  const user = await findUserById(req.userId!);
   if (!user) {
     sendError(res, 404, "NOT_FOUND", "User not found");
     return;
@@ -329,17 +340,17 @@ router.post("/mfa/activate", requireAuth, (req: AuthedRequest, res) => {
     sendError(res, 400, "INVALID_CODE", "Authenticator code does not match");
     return;
   }
-  updateUser(user.id, { totpSecret: body.data.secret });
+  await updateUser(user.id, { totpSecret: body.data.secret });
   res.json({ ok: true });
 });
 
-router.post("/mfa/verify-login", (req, res) => {
+router.post("/mfa/verify-login", async (req, res) => {
   const body = z.object({ email: emailSchema, code: z.string().min(6).max(8) }).safeParse(req.body);
   if (!body.success) {
     sendError(res, 400, "VALIDATION_ERROR", "email and code required");
     return;
   }
-  const user = findUserByEmail(body.data.email);
+  const user = await findUserByEmail(body.data.email);
   if (!user?.totpSecret) {
     sendError(res, 400, "MFA_NOT_CONFIGURED", "MFA is not enabled for this account");
     return;

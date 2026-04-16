@@ -5,7 +5,7 @@ import { sendError } from "../errors.js";
 
 export type AuthedRequest = Request & { userId?: string };
 
-export function requireAuth(req: AuthedRequest, res: Response, next: NextFunction) {
+export async function requireAuth(req: AuthedRequest, res: Response, next: NextFunction) {
   const header = req.headers.authorization;
   const token = header?.startsWith("Bearer ") ? header.slice(7) : null;
   if (!token) {
@@ -17,7 +17,7 @@ export function requireAuth(req: AuthedRequest, res: Response, next: NextFunctio
     sendError(res, 401, "UNAUTHORIZED", "Invalid or expired token");
     return;
   }
-  const user = findUserById(payload.sub);
+  const user = await findUserById(payload.sub);
   if (!user) {
     sendError(res, 401, "UNAUTHORIZED", "User not found");
     return;

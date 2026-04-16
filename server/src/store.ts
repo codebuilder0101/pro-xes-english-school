@@ -2,6 +2,30 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import type { DatabaseFile, StoredMessage, StoredRoom, StoredUser } from "./types.js";
+import { supabase, type UserRow } from "./supabase.js";
+
+function rowToUser(r: UserRow): StoredUser {
+  return {
+    id: r.id,
+    email: r.email,
+    passwordHash: r.password_hash,
+    name: r.name ?? undefined,
+    newsletter: r.newsletter,
+    emailVerified: r.email_verified,
+    locked: r.locked,
+    totpSecret: r.totp_secret,
+    flag: r.flag,
+    createdAt: r.created_at,
+  };
+}
+
+type NewUser = {
+  email: string;
+  passwordHash: string;
+  name?: string;
+  newsletter?: boolean;
+  locked?: boolean;
+};
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const dataPath = path.join(__dirname, "..", "data", "db.json");
@@ -118,7 +142,6 @@ function load(): DatabaseFile {
   }
   const raw = fs.readFileSync(dataPath, "utf8");
   const parsed = JSON.parse(raw) as DatabaseFile;
-  if (!parsed.users) parsed.users = [];
   if (!parsed.rooms?.length) parsed.rooms = defaultRooms;
   if (!parsed.messages?.length) parsed.messages = defaultMessages;
   return parsed;
@@ -135,24 +158,55 @@ export function getDb() {
   return cache;
 }
 
-export function findUserByEmail(email: string): StoredUser | undefined {
-  return cache.users.find((u) => u.email.toLowerCase() === email.toLowerCase());
+export async function findUserByEmail(email: string): Promise<StoredUser | undefined> {
+  const { data, error } = await supabase
+    .from("users")
+    .select("*")
+    .ilike("email", email)
+    .maybeSingle();
+  if (error) throw error;
+  return data ? rowToUser(data as UserRow) : undefined;
 }
 
-export function findUserById(id: string): StoredUser | undefined {
-  return cache.users.find((u) => u.id === id);
+export async function findUserById(id: string): Promise<StoredUser | undefined> {
+  const { data, error } = await supabase
+    .from("users")
+    .select("*")
+    .eq("id", id)
+    .maybeSingle();
+  if (error) throw error;
+  return data ? rowToUser(data as UserRow) : undefined;
 }
 
-export function insertUser(user: StoredUser) {
-  cache.users.push(user);
-  persist();
+export async function insertUser(user: NewUser): Promise<StoredUser> {
+  const { data, error } = await supabase
+    .from("users")
+    .insert({
+      email: user.email.toLowerCase(),
+      password_hash: user.passwordHash,
+      name: user.name ?? null,
+      newsletter: user.newsletter ?? false,
+      locked: user.locked ?? false,
+    })
+    .select("*")
+    .single();
+  if (error) throw error;
+  return rowToUser(data as UserRow);
 }
 
-export function updateUser(id: string, patch: Partial<StoredUser>) {
-  const u = cache.users.find((x) => x.id === id);
-  if (!u) return;
-  Object.assign(u, patch);
-  persist();
+export async function updateUser(id: string, patch: Partial<StoredUser>): Promise<void> {
+  const dbPatch: Record<string, unknown> = {};
+  if (patch.email !== undefined) dbPatch.email = patch.email.toLowerCase();
+  if (patch.passwordHash !== undefined) dbPatch.password_hash = patch.passwordHash;
+  if (patch.name !== undefined) dbPatch.name = patch.name;
+  if (patch.newsletter !== undefined) dbPatch.newsletter = patch.newsletter;
+  if (patch.emailVerified !== undefined) dbPatch.email_verified = patch.emailVerified;
+  if (patch.locked !== undefined) dbPatch.locked = patch.locked;
+  if (patch.totpSecret !== undefined) dbPatch.totp_secret = patch.totpSecret;
+  if (patch.flag !== undefined) dbPatch.flag = patch.flag;
+  if (Object.keys(dbPatch).length === 0) return;
+  const { error } = await supabase.from("users").update(dbPatch).eq("id", id);
+  if (error) throw error;
 }
 
 export function listRooms(): StoredRoom[] {

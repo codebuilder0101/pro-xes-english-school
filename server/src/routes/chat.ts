@@ -33,14 +33,14 @@ router.get("/rooms/:roomId/messages", requireAuth, (req: AuthedRequest, res) => 
   res.json({ messages: msgs });
 });
 
-router.post("/rooms/:roomId/messages", requireAuth, (req: AuthedRequest, res) => {
+router.post("/rooms/:roomId/messages", requireAuth, async (req: AuthedRequest, res) => {
   const roomId = z.string().min(1).safeParse(req.params.roomId);
   const body = z.object({ text: z.string().min(1).max(4000) }).safeParse(req.body);
   if (!roomId.success || !body.success) {
     sendError(res, 400, "VALIDATION_ERROR", "Invalid payload");
     return;
   }
-  const user = findUserById(req.userId!);
+  const user = await findUserById(req.userId!);
   if (!user) {
     sendError(res, 404, "NOT_FOUND", "User not found");
     return;
