@@ -12,16 +12,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Camera, Trash2 } from "lucide-react";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar as CalendarIcon, Camera, Trash2, X } from "lucide-react";
+import { format, parse, isValid } from "date-fns";
+import { ptBR, enUS } from "date-fns/locale";
+import type { Locale } from "date-fns";
 import Navbar from "@/components/landing/Navbar";
 import { apiFetch, type ApiError } from "@/lib/api";
-import type {
-  Address,
-  CurrentUser,
-  EnglishLevel,
-  Gender,
-} from "@/lib/useCurrentUser";
+import { useCurrentUser, type CurrentUser, type EnglishLevel, type Gender } from "@/lib/useCurrentUser";
 import { useLanguage } from "@/i18n/LanguageContext";
+import type { Language } from "@/i18n/translations";
+import { cn } from "@/lib/utils";
 
 const GENDER_OPTIONS: Gender[] = ["female", "male", "non_binary", "other", "prefer_not_to_say"];
 const ENGLISH_LEVELS: EnglishLevel[] = ["A1", "A2", "B1", "B2", "C1", "C2", "unknown"];
@@ -36,8 +38,6 @@ const initialsOf = (u: { fullName?: string | null; displayName?: string | null; 
   return letters.toUpperCase();
 };
 
-const emptyAddress: Address = { street: "", city: "", state: "", postalCode: "", country: "" };
-
 type FormState = {
   fullName: string;
   displayName: string;
@@ -45,13 +45,10 @@ type FormState = {
   birthday: string;
   phone: string;
   englishLevel: EnglishLevel | "";
-  address: Address;
+  address: string;
 };
 
 type Errors = Partial<Record<keyof FormState, string>> & {
-  street?: string;
-  city?: string;
-  country?: string;
   avatar?: string;
 };
 
@@ -63,15 +60,41 @@ const fileToBase64 = (file: File): Promise<string> =>
     reader.readAsDataURL(file);
   });
 
+const userToForm = (u: CurrentUser): FormState => ({
+  fullName: u.fullName ?? "",
+  displayName: u.displayName ?? u.name ?? "",
+  gender: u.gender ?? "",
+  birthday: u.birthday ?? "",
+  phone: u.phone ?? "",
+  englishLevel: u.englishLevel ?? "",
+  address: u.address ?? "",
+});
+
+const normalizedForm = (s: FormState): FormState => ({
+  fullName: s.fullName.trim(),
+  displayName: s.displayName.trim(),
+  gender: s.gender,
+  birthday: s.birthday,
+  phone: s.phone.trim(),
+  englishLevel: s.englishLevel,
+  address: s.address.trim(),
+});
+
+const sameForm = (a: FormState, b: FormState) => {
+  const na = normalizedForm(a);
+  const nb = normalizedForm(b);
+  return (Object.keys(na) as Array<keyof FormState>).every((k) => na[k] === nb[k]);
+};
+
 const ProfilePage = () => {
   const navigate = useNavigate();
-  const { t } = useLanguage();
-  const [user, setUser] = useState<CurrentUser | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { t, language, setLanguage } = useLanguage();
+  const { user, loading, setUser } = useCurrentUser();
   const [saving, setSaving] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [banner, setBanner] = useState<{ kind: "ok" | "err"; msg: string } | null>(null);
   const [errors, setErrors] = useState<Errors>({});
+  const [formReady, setFormReady] = useState(false);
   const fileRef = useRef<HTMLInputElement | null>(null);
 
   const [form, setForm] = useState<FormState>({
@@ -81,36 +104,24 @@ const ProfilePage = () => {
     birthday: "",
     phone: "",
     englishLevel: "",
-    address: { ...emptyAddress },
+    address: "",
   });
 
   useEffect(() => {
-    apiFetch<{ user: CurrentUser }>("/api/auth/me")
-      .then((res) => {
-        setUser(res.user);
-        setForm({
-          fullName: res.user.fullName ?? "",
-          displayName: res.user.displayName ?? res.user.name ?? "",
-          gender: res.user.gender ?? "",
-          birthday: res.user.birthday ?? "",
-          phone: res.user.phone ?? "",
-          englishLevel: res.user.englishLevel ?? "",
-          address: res.user.address
-            ? {
-                street: res.user.address.street ?? "",
-                city: res.user.address.city ?? "",
-                state: res.user.address.state ?? "",
-                postalCode: res.user.address.postalCode ?? "",
-                country: res.user.address.country ?? "",
-              }
-            : { ...emptyAddress },
-        });
-      })
-      .catch(() => navigate("/auth/sign-in", { replace: true }))
-      .finally(() => setLoading(false));
-  }, [navigate]);
+    if (loading) return;
+    if (!user) {
+      navigate("/auth/sign-in", { replace: true });
+      return;
+    }
+    if (formReady) return;
+    setForm(userToForm(user));
+    setFormReady(true);
+  }, [loading, user, navigate, formReady]);
 
-  const todayISO = useMemo(() => new Date().toISOString().slice(0, 10), []);
+  const isDirty = useMemo(() => {
+    if (!user) return false;
+    return !sameForm(form, userToForm(user));
+  }, [form, user]);
 
   const validate = (s: FormState): Errors => {
     const e: Errors = {};
@@ -127,18 +138,6 @@ const ProfilePage = () => {
     }
     if (!s.englishLevel) e.englishLevel = t("profile.err.levelRequired");
     if (s.phone.trim() && !PHONE_RE.test(s.phone.trim())) e.phone = t("profile.err.phoneInvalid");
-
-    const addr = s.address;
-    const anyAddr = addr.street || addr.city || addr.state || addr.postalCode || addr.country;
-    if (anyAddr) {
-      if (!addr.street.trim()) e.street = t("profile.err.streetRequired");
-      if (!addr.city.trim()) e.city = t("profile.err.cityRequired");
-      if (!addr.country.trim()) e.country = t("profile.err.countryRequired");
-    } else {
-      e.street = t("profile.err.streetRequired");
-      e.city = t("profile.err.cityRequired");
-      e.country = t("profile.err.countryRequired");
-    }
     return e;
   };
 
@@ -206,19 +205,14 @@ const ProfilePage = () => {
         birthday: form.birthday || null,
         phone: form.phone.trim() || null,
         englishLevel: form.englishLevel || null,
-        address: {
-          street: form.address.street.trim(),
-          city: form.address.city.trim(),
-          state: form.address.state?.trim() || "",
-          postalCode: form.address.postalCode?.trim() || "",
-          country: form.address.country.trim(),
-        },
+        address: form.address.trim() || null,
       };
       const res = await apiFetch<{ user: CurrentUser }>("/api/auth/me", {
         method: "PATCH",
         body: JSON.stringify(payload),
       });
       setUser(res.user);
+      setForm(userToForm(res.user));
       setBanner({ kind: "ok", msg: t("profile.saved") });
     } catch (err) {
       const ae = err as ApiError;
@@ -230,9 +224,6 @@ const ProfilePage = () => {
 
   const setField = <K extends keyof FormState>(k: K, v: FormState[K]) =>
     setForm((prev) => ({ ...prev, [k]: v }));
-
-  const setAddr = (k: keyof Address, v: string) =>
-    setForm((prev) => ({ ...prev, address: { ...prev.address, [k]: v } }));
 
   return (
     <>
@@ -363,13 +354,14 @@ const ProfilePage = () => {
                 </Field>
 
                 <Field id="profile-birthday" label={t("profile.birthday")} required error={errors.birthday}>
-                  <Input
+                  <BirthdayPicker
                     id="profile-birthday"
-                    type="date"
-                    max={todayISO}
                     value={form.birthday}
-                    onChange={(e) => setField("birthday", e.target.value)}
-                    aria-invalid={errors.birthday ? true : undefined}
+                    onChange={(v) => setField("birthday", v)}
+                    placeholder={t("profile.birthdayPlaceholder")}
+                    clearLabel={t("profile.birthdayClear")}
+                    invalid={Boolean(errors.birthday)}
+                    locale={language === "pt" ? ptBR : enUS}
                   />
                 </Field>
 
@@ -409,64 +401,50 @@ const ProfilePage = () => {
                 </Field>
               </section>
 
-              {/* Address */}
-              <fieldset className="bg-card border border-border rounded-xl p-6 shadow-sm">
-                <legend className="text-base font-bold px-1">{t("profile.homeAddress")}</legend>
-                <div className="space-y-5 mt-3">
-                  <Field id="addr-street" label={t("profile.street")} required error={errors.street}>
-                    <Input
-                      id="addr-street"
-                      value={form.address.street}
-                      onChange={(e) => setAddr("street", e.target.value)}
-                      autoComplete="street-address"
-                      aria-invalid={errors.street ? true : undefined}
-                    />
-                  </Field>
+              <section className="bg-card border border-border rounded-xl p-6 shadow-sm">
+                <Field
+                  id="profile-language"
+                  label={t("profile.language")}
+                  helper={t("profile.language.helper")}
+                >
+                  <Select
+                    value={language}
+                    onValueChange={(v) => setLanguage(v as Language)}
+                  >
+                    <SelectTrigger id="profile-language">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="pt">{t("profile.language.pt")}</SelectItem>
+                      <SelectItem value="en">{t("profile.language.en")}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </Field>
+              </section>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                    <Field id="addr-city" label={t("profile.city")} required error={errors.city}>
-                      <Input
-                        id="addr-city"
-                        value={form.address.city}
-                        onChange={(e) => setAddr("city", e.target.value)}
-                        autoComplete="address-level2"
-                        aria-invalid={errors.city ? true : undefined}
-                      />
-                    </Field>
-                    <Field id="addr-state" label={t("profile.state")} helper={t("profile.optional")}>
-                      <Input
-                        id="addr-state"
-                        value={form.address.state ?? ""}
-                        onChange={(e) => setAddr("state", e.target.value)}
-                        autoComplete="address-level1"
-                      />
-                    </Field>
-                    <Field id="addr-postal" label={t("profile.postalCode")} helper={t("profile.optional")}>
-                      <Input
-                        id="addr-postal"
-                        value={form.address.postalCode ?? ""}
-                        onChange={(e) => setAddr("postalCode", e.target.value)}
-                        autoComplete="postal-code"
-                      />
-                    </Field>
-                    <Field id="addr-country" label={t("profile.country")} required error={errors.country}>
-                      <Input
-                        id="addr-country"
-                        value={form.address.country}
-                        onChange={(e) => setAddr("country", e.target.value)}
-                        autoComplete="country-name"
-                        aria-invalid={errors.country ? true : undefined}
-                      />
-                    </Field>
-                  </div>
-                </div>
-              </fieldset>
+              <section className="bg-card border border-border rounded-xl p-6 shadow-sm">
+                <Field
+                  id="profile-address"
+                  label={t("profile.homeAddress")}
+                  helper={t("profile.optional")}
+                  error={errors.address}
+                >
+                  <Input
+                    id="profile-address"
+                    value={form.address}
+                    onChange={(e) => setField("address", e.target.value)}
+                    autoComplete="street-address"
+                    maxLength={500}
+                    aria-invalid={errors.address ? true : undefined}
+                  />
+                </Field>
+              </section>
 
               <div className="flex items-center justify-end gap-3 pt-2">
                 <Button type="button" variant="ghost" onClick={() => navigate(-1)}>
                   {t("profile.cancel")}
                 </Button>
-                <Button type="submit" disabled={saving}>
+                <Button type="submit" disabled={saving || !isDirty}>
                   {saving ? t("profile.saving") : t("profile.save")}
                 </Button>
               </div>
@@ -510,5 +488,107 @@ const Field = ({
     ) : null}
   </div>
 );
+
+const BIRTHDAY_DISPLAY_FORMAT = "dd/MM/yyyy";
+
+const BirthdayPicker = ({
+  id,
+  value,
+  onChange,
+  placeholder,
+  clearLabel,
+  invalid,
+  locale,
+}: {
+  id: string;
+  value: string;
+  onChange: (iso: string) => void;
+  placeholder: string;
+  clearLabel: string;
+  invalid?: boolean;
+  locale: Locale;
+}) => {
+  const [open, setOpen] = useState(false);
+  const selected = value ? parse(value, "yyyy-MM-dd", new Date()) : undefined;
+  const safeSelected = selected && isValid(selected) ? selected : undefined;
+  const today = new Date();
+  today.setHours(23, 59, 59, 999);
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          id={id}
+          aria-invalid={invalid ? true : undefined}
+          aria-haspopup="dialog"
+          aria-expanded={open}
+          className={cn(
+            "flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm transition-colors",
+            "ring-offset-background hover:border-ring focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+            invalid && "border-destructive focus-visible:ring-destructive",
+            !safeSelected && "text-muted-foreground",
+          )}
+        >
+          <span className="truncate">
+            {safeSelected ? format(safeSelected, BIRTHDAY_DISPLAY_FORMAT, { locale }) : placeholder}
+          </span>
+          <span className="flex items-center gap-1 text-muted-foreground">
+            {safeSelected ? (
+              <span
+                role="button"
+                tabIndex={0}
+                aria-label={clearLabel}
+                className="p-0.5 rounded hover:bg-accent"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onChange("");
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    onChange("");
+                  }
+                }}
+              >
+                <X className="w-3.5 h-3.5" />
+              </span>
+            ) : null}
+            <CalendarIcon className="w-4 h-4" />
+          </span>
+        </button>
+      </PopoverTrigger>
+      <PopoverContent className="w-auto p-0" align="start">
+        <Calendar
+          mode="single"
+          locale={locale}
+          selected={safeSelected}
+          defaultMonth={safeSelected ?? new Date(today.getFullYear() - 25, today.getMonth(), 1)}
+          captionLayout="dropdown-buttons"
+          fromYear={1900}
+          toYear={today.getFullYear()}
+          disabled={{ after: today }}
+          onSelect={(d) => {
+            if (d) {
+              onChange(format(d, "yyyy-MM-dd"));
+              setOpen(false);
+            }
+          }}
+          initialFocus
+          classNames={{
+            caption_label: "hidden",
+            caption_dropdowns: "flex items-center justify-center gap-1.5 w-full",
+            vhidden: "sr-only",
+            dropdown:
+              "h-8 rounded-md border border-input bg-background pl-2 pr-1 text-sm font-semibold cursor-pointer hover:border-ring focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+            dropdown_month: "relative",
+            dropdown_year: "relative",
+          }}
+        />
+      </PopoverContent>
+    </Popover>
+  );
+};
 
 export default ProfilePage;

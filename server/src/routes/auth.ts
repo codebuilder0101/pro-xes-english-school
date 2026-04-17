@@ -172,14 +172,6 @@ router.get("/me", requireAuth, async (req: AuthedRequest, res) => {
 const genderSchema = z.enum(["female", "male", "non_binary", "other", "prefer_not_to_say"]);
 const englishLevelSchema = z.enum(["A1", "A2", "B1", "B2", "C1", "C2", "unknown"]);
 
-const addressSchema = z.object({
-  street: z.string().trim().min(1).max(200),
-  city: z.string().trim().min(1).max(100),
-  state: z.string().trim().max(100).optional().or(z.literal("")),
-  postalCode: z.string().trim().max(20).optional().or(z.literal("")),
-  country: z.string().trim().min(1).max(100),
-});
-
 const profilePatchSchema = z.object({
   fullName: z.string().trim().min(1).max(120).optional(),
   displayName: z.string().trim().min(1).max(80).optional(),
@@ -195,7 +187,7 @@ const profilePatchSchema = z.object({
     ),
   phone: z.string().trim().max(40).regex(/^[+()\-\s\d.]*$/).nullable().optional(),
   englishLevel: englishLevelSchema.nullable().optional(),
-  address: addressSchema.nullable().optional(),
+  address: z.string().trim().max(500).nullable().optional(),
   // legacy/simple fields kept for backwards compatibility
   name: z.string().trim().min(1).max(80).optional(),
   flag: z.string().trim().min(1).max(8).optional(),
@@ -216,15 +208,7 @@ router.patch("/me", requireAuth, async (req: AuthedRequest, res) => {
   if (d.phone !== undefined) patch.phone = d.phone;
   if (d.englishLevel !== undefined) patch.englishLevel = d.englishLevel;
   if (d.address !== undefined) {
-    patch.address = d.address
-      ? {
-          street: d.address.street,
-          city: d.address.city,
-          state: d.address.state || undefined,
-          postalCode: d.address.postalCode || undefined,
-          country: d.address.country,
-        }
-      : null;
+    patch.address = d.address && d.address.length > 0 ? d.address : null;
   }
   if (d.name !== undefined) patch.name = d.name;
   if (d.flag !== undefined) patch.flag = d.flag;

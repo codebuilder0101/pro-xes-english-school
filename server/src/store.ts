@@ -23,7 +23,7 @@ function rowToUser(r: UserRow): StoredUser {
     avatarUrl: r.avatar_url,
     phone: r.phone,
     englishLevel: (r.english_level as StoredUser["englishLevel"]) ?? null,
-    address: (r.address as unknown as StoredUser["address"]) ?? null,
+    address: r.address,
   };
 }
 

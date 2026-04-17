@@ -1,17 +1,18 @@
-import { useCallback, useEffect, useState } from "react";
+import {
+  createContext,
+  createElement,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from "react";
 import { apiFetch, type ApiError } from "./api";
 import { clearAccessToken } from "./session";
 
 export type Gender = "female" | "male" | "non_binary" | "other" | "prefer_not_to_say";
 export type EnglishLevel = "A1" | "A2" | "B1" | "B2" | "C1" | "C2" | "unknown";
-
-export type Address = {
-  street: string;
-  city: string;
-  state?: string;
-  postalCode?: string;
-  country: string;
-};
 
 export type CurrentUser = {
   id: string;
@@ -26,10 +27,19 @@ export type CurrentUser = {
   avatarUrl: string | null;
   phone: string | null;
   englishLevel: EnglishLevel | null;
-  address: Address | null;
+  address: string | null;
 };
 
-export function useCurrentUser() {
+type CurrentUserContextValue = {
+  user: CurrentUser | null;
+  loading: boolean;
+  setUser: (user: CurrentUser | null) => void;
+  signOut: () => Promise<void>;
+};
+
+const CurrentUserContext = createContext<CurrentUserContextValue | null>(null);
+
+export function CurrentUserProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<CurrentUser | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
 
@@ -64,5 +74,18 @@ export function useCurrentUser() {
     window.location.href = "/";
   }, []);
 
-  return { user, loading, signOut };
+  const value = useMemo<CurrentUserContextValue>(
+    () => ({ user, loading, setUser, signOut }),
+    [user, loading, signOut],
+  );
+
+  return createElement(CurrentUserContext.Provider, { value }, children);
+}
+
+export function useCurrentUser() {
+  const ctx = useContext(CurrentUserContext);
+  if (!ctx) {
+    throw new Error("useCurrentUser must be used within a CurrentUserProvider");
+  }
+  return ctx;
 }

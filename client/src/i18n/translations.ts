@@ -26,6 +26,8 @@ export const translations = {
   "profile.gender.other": { pt: "Outro", en: "Other" },
   "profile.gender.prefer_not_to_say": { pt: "Prefiro não dizer", en: "Prefer not to say" },
   "profile.birthday": { pt: "Data de nascimento", en: "Birthday" },
+  "profile.birthdayPlaceholder": { pt: "Selecione uma data", en: "Select a date" },
+  "profile.birthdayClear": { pt: "Limpar data", en: "Clear date" },
   "profile.englishLevel": { pt: "Nível de inglês", en: "English Level" },
   "profile.englishLevelPlaceholder": { pt: "Selecione seu nível", en: "Select your level" },
   "profile.englishLevel.A1": { pt: "A1 — Iniciante", en: "A1 — Beginner" },
@@ -46,6 +48,11 @@ export const translations = {
   "profile.avatarHelper": { pt: "JPG, PNG ou WebP. Máx. 2 MB.", en: "JPG, PNG, or WebP. Max 2 MB." },
   "profile.avatarUpdated": { pt: "Avatar atualizado.", en: "Avatar updated." },
   "profile.avatarRemoved": { pt: "Avatar removido.", en: "Avatar removed." },
+
+  "profile.language": { pt: "Idioma", en: "Language" },
+  "profile.language.helper": { pt: "Escolha o idioma da interface.", en: "Choose the interface language." },
+  "profile.language.pt": { pt: "Português (Brasil)", en: "Portuguese (Brazil)" },
+  "profile.language.en": { pt: "Inglês", en: "English" },
 
   "profile.homeAddress": { pt: "Endereço residencial", en: "Home Address" },
   "profile.street": { pt: "Endereço", en: "Street Address" },

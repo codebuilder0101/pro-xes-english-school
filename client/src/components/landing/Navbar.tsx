@@ -4,18 +4,17 @@ import {
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Switch } from "@/components/ui/switch";
-import { Globe, Menu, Moon, User, X } from "lucide-react";
+import { Menu, Moon, User, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useLanguage } from "@/i18n/LanguageContext";
-import LanguageSwitcher from "@/components/LanguageSwitcher";
 import xesAvatar from "@/assets/xes-avatar.jpeg";
 import { useCurrentUser, type CurrentUser } from "@/lib/useCurrentUser";
 
 const initialsOf = (u: CurrentUser) => {
-  const source = (u.name || u.email || "?").trim();
+  const source = (u.displayName || u.fullName || u.name || u.email || "?").trim();
   const parts = source.split(/\s+/);
   const letters = parts.length >= 2 ? parts[0][0] + parts[1][0] : source.slice(0, 2);
   return letters.toUpperCase();
@@ -43,27 +42,27 @@ const useDarkMode = () => {
 
 const Navbar = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
-  const { t, language, setLanguage } = useLanguage();
+  const { t } = useLanguage();
   const { user, signOut } = useCurrentUser();
   const { dark, toggle: toggleDark } = useDarkMode();
 
-  const displayName = user ? user.name?.trim() || user.email.split("@")[0] : "";
-  const langLabel = language === "pt" ? "Português 🇧🇷" : "English 🇺🇸";
+  const displayName = user
+    ? user.displayName?.trim() || user.name?.trim() || user.email.split("@")[0]
+    : "";
+  const avatarUrl = user?.avatarUrl ?? null;
 
   const UserMenu = (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <button className="flex items-center gap-2 rounded-full pl-1 pr-3 py-1 hover:bg-accent transition-colors">
           <Avatar className="w-8 h-8">
+            {avatarUrl ? <AvatarImage src={avatarUrl} alt="" /> : null}
             <AvatarFallback className="bg-primary/10 text-primary text-xs font-bold">
               {user ? initialsOf(user) : ""}
             </AvatarFallback>
           </Avatar>
           <span className="text-sm font-semibold text-foreground max-w-[140px] truncate">
             {displayName}
-          </span>
-          <span className="text-[10px] font-bold uppercase text-muted-foreground">
-            {user?.flag}
           </span>
         </button>
       </DropdownMenuTrigger>
@@ -72,6 +71,7 @@ const Navbar = () => {
           <>
             <div className="flex items-center gap-3 px-4 py-4 border-b border-border">
               <Avatar className="w-12 h-12">
+                {avatarUrl ? <AvatarImage src={avatarUrl} alt="" /> : null}
                 <AvatarFallback className="bg-primary/10 text-primary text-base font-bold">
                   {initialsOf(user)}
                 </AvatarFallback>
@@ -89,20 +89,6 @@ const Navbar = () => {
 
             <div className="py-1">
               <MenuRow icon={<User className="w-4 h-4" />} label={t("nav.menu.myProfile")} to="/profile" />
-
-              <button
-                type="button"
-                onClick={() => setLanguage(language === "pt" ? "en" : "pt")}
-                className="w-full flex items-center justify-between px-4 py-2.5 hover:bg-accent transition-colors"
-              >
-                <span className="flex items-center gap-3 text-sm text-foreground">
-                  <Globe className="w-4 h-4" />
-                  {t("nav.menu.language")}
-                </span>
-                <span className="text-xs font-semibold rounded-md border border-border px-2 py-0.5 bg-background">
-                  {langLabel}
-                </span>
-              </button>
             </div>
 
             <div className="border-t border-border px-4 py-3 flex items-center justify-between">
@@ -144,7 +130,6 @@ const Navbar = () => {
         </div>
 
         <div className="hidden md:flex items-center gap-2">
-          <LanguageSwitcher />
           {user ? UserMenu : (
             <>
               <Button variant="ghost" size="sm" asChild>
@@ -170,13 +155,11 @@ const Navbar = () => {
             <a href="/#tutors" className="text-sm font-semibold py-2 text-muted-foreground">{t("nav.tutors")}</a>
             <a href="/#pricing" className="text-sm font-semibold py-2 text-muted-foreground">{t("nav.pricing")}</a>
             <Link to="/chat" className="text-sm font-semibold py-2 text-muted-foreground">{t("nav.chat")}</Link>
-            <div className="flex items-center gap-2">
-              <LanguageSwitcher />
-            </div>
             {user ? (
               <>
                 <div className="flex items-center gap-3 py-2 border-t border-border pt-3">
                   <Avatar className="w-10 h-10">
+                    {avatarUrl ? <AvatarImage src={avatarUrl} alt="" /> : null}
                     <AvatarFallback className="bg-primary/10 text-primary text-sm font-bold">
                       {initialsOf(user)}
                     </AvatarFallback>

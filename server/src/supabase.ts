@@ -31,5 +31,5 @@ export type UserRow = {
   avatar_url: string | null;
   phone: string | null;
   english_level: string | null;
-  address: Record<string, unknown> | null;
+  address: string | null;
 };
