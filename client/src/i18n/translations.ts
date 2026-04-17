@@ -9,6 +9,7 @@ export const translations = {
   "nav.chat": { pt: "Chat", en: "Chat" },
   "nav.login": { pt: "Entrar", en: "Sign in" },
   "nav.cta": { pt: "Começar grátis", en: "Start free" },
+  "nav.logout": { pt: "Sair", en: "Sign out" },
 
   // Hero
   "hero.badge": { pt: "Aprenda inglês conectando pessoas do mundo todo", en: "Learn English connecting people worldwide" },

@@ -8,7 +8,7 @@ const PricingSection = () => {
   const plans = [
     {
       nameKey: "pricing.monthly" as const,
-      price: "R$ 29",
+      price: "R$ 14",
       periodKey: "pricing.month" as const,
       features: ["pricing.f.all_scenarios", "pricing.f.ai_unlimited", "pricing.f.corrections", "pricing.f.progress", "pricing.f.chat", "pricing.f.correction_writing_pronunciation"] as const,
       popular: false,
@@ -30,7 +30,7 @@ const PricingSection = () => {
     },
     {
       nameKey: "pricing.annual" as const,
-      price: "R$ 14",
+      price: "R$ 29",
       periodKey: "pricing.month" as const,
       features: [
         "pricing.f.everything_semester",
