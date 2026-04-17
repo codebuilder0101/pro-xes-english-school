@@ -24,4 +24,12 @@ export type UserRow = {
   totp_secret: string | null;
   flag: string;
   created_at: string;
+  full_name: string | null;
+  display_name: string | null;
+  gender: string | null;
+  birthday: string | null;
+  avatar_url: string | null;
+  phone: string | null;
+  english_level: string | null;
+  address: Record<string, unknown> | null;
 };

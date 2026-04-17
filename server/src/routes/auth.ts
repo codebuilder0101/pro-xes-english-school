@@ -1,4 +1,5 @@
 import { Router } from "express";
+import type { Response } from "express";
 import { randomBytes } from "node:crypto";
 import bcrypt from "bcryptjs";
 import { authenticator } from "otplib";
@@ -7,7 +8,7 @@ import { findUserByEmail, findUserById, insertUser, updateUser } from "../store.
 import { sendError } from "../errors.js";
 import { signAccessToken } from "../authTokens.js";
 import type { AuthedRequest } from "../middleware/requireAuth.js";
-import { requireAuth } from "../middleware/requireAuth.js";
+import { ACCESS_COOKIE, requireAuth } from "../middleware/requireAuth.js";
 import type { StoredUser } from "../types.js";
 import { sendVerificationEmail, sendPasswordResetEmail, sendMagicLinkEmail, sendOtpEmail } from "../mailer.js";
 
@@ -15,6 +16,27 @@ const isProd = process.env.NODE_ENV === "production";
 const mailerLive = Boolean(process.env.RESEND_API_KEY);
 // Only expose tokens in the API response when mail isn't actually being sent (local dev without Resend key).
 const exposeDevTokens = !isProd && !mailerLive;
+
+const ACCESS_COOKIE_MAX_AGE_MS = Number(process.env.JWT_EXPIRES_SEC ?? 60 * 60 * 24 * 30) * 1000;
+
+function setAuthCookie(res: Response, token: string) {
+  res.cookie(ACCESS_COOKIE, token, {
+    httpOnly: true,
+    secure: isProd,
+    sameSite: "lax",
+    path: "/",
+    maxAge: ACCESS_COOKIE_MAX_AGE_MS,
+  });
+}
+
+function clearAuthCookie(res: Response) {
+  res.clearCookie(ACCESS_COOKIE, {
+    httpOnly: true,
+    secure: isProd,
+    sameSite: "lax",
+    path: "/",
+  });
+}
 
 const router = Router();
 
@@ -47,6 +69,14 @@ function publicUser(u: StoredUser) {
     name: u.name ?? null,
     emailVerified: u.emailVerified,
     flag: u.flag ?? "🇧🇷",
+    fullName: u.fullName ?? null,
+    displayName: u.displayName ?? null,
+    gender: u.gender ?? null,
+    birthday: u.birthday ?? null,
+    avatarUrl: u.avatarUrl ?? null,
+    phone: u.phone ?? null,
+    englishLevel: u.englishLevel ?? null,
+    address: u.address ?? null,
   };
 }
 
@@ -118,13 +148,157 @@ router.post("/login", async (req, res) => {
   }
 
   const accessToken = signAccessToken(user.id);
+  setAuthCookie(res, accessToken);
   res.json({
     token: accessToken,
     user: publicUser(user),
   });
 });
 
+router.post("/logout", (_req, res) => {
+  clearAuthCookie(res);
+  res.json({ ok: true });
+});
+
 router.get("/me", requireAuth, async (req: AuthedRequest, res) => {
+  const user = await findUserById(req.userId!);
+  if (!user) {
+    sendError(res, 404, "NOT_FOUND", "User not found");
+    return;
+  }
+  res.json({ user: publicUser(user) });
+});
+
+const genderSchema = z.enum(["female", "male", "non_binary", "other", "prefer_not_to_say"]);
+const englishLevelSchema = z.enum(["A1", "A2", "B1", "B2", "C1", "C2", "unknown"]);
+
+const addressSchema = z.object({
+  street: z.string().trim().min(1).max(200),
+  city: z.string().trim().min(1).max(100),
+  state: z.string().trim().max(100).optional().or(z.literal("")),
+  postalCode: z.string().trim().max(20).optional().or(z.literal("")),
+  country: z.string().trim().min(1).max(100),
+});
+
+const profilePatchSchema = z.object({
+  fullName: z.string().trim().min(1).max(120).optional(),
+  displayName: z.string().trim().min(1).max(80).optional(),
+  gender: genderSchema.nullable().optional(),
+  birthday: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, "Use YYYY-MM-DD")
+    .nullable()
+    .optional()
+    .refine(
+      (v) => v == null || new Date(v + "T00:00:00Z").getTime() < Date.now(),
+      { message: "Birthday must be in the past" },
+    ),
+  phone: z.string().trim().max(40).regex(/^[+()\-\s\d.]*$/).nullable().optional(),
+  englishLevel: englishLevelSchema.nullable().optional(),
+  address: addressSchema.nullable().optional(),
+  // legacy/simple fields kept for backwards compatibility
+  name: z.string().trim().min(1).max(80).optional(),
+  flag: z.string().trim().min(1).max(8).optional(),
+});
+
+router.patch("/me", requireAuth, async (req: AuthedRequest, res) => {
+  const parsed = profilePatchSchema.safeParse(req.body);
+  if (!parsed.success) {
+    sendError(res, 400, "VALIDATION_ERROR", parsed.error.issues[0]?.message ?? "Invalid profile fields");
+    return;
+  }
+  const patch: Partial<StoredUser> = {};
+  const d = parsed.data;
+  if (d.fullName !== undefined) patch.fullName = d.fullName;
+  if (d.displayName !== undefined) patch.displayName = d.displayName;
+  if (d.gender !== undefined) patch.gender = d.gender;
+  if (d.birthday !== undefined) patch.birthday = d.birthday;
+  if (d.phone !== undefined) patch.phone = d.phone;
+  if (d.englishLevel !== undefined) patch.englishLevel = d.englishLevel;
+  if (d.address !== undefined) {
+    patch.address = d.address
+      ? {
+          street: d.address.street,
+          city: d.address.city,
+          state: d.address.state || undefined,
+          postalCode: d.address.postalCode || undefined,
+          country: d.address.country,
+        }
+      : null;
+  }
+  if (d.name !== undefined) patch.name = d.name;
+  if (d.flag !== undefined) patch.flag = d.flag;
+  if (Object.keys(patch).length === 0) {
+    sendError(res, 400, "VALIDATION_ERROR", "No fields to update");
+    return;
+  }
+  await updateUser(req.userId!, patch);
+  const user = await findUserById(req.userId!);
+  if (!user) {
+    sendError(res, 404, "NOT_FOUND", "User not found");
+    return;
+  }
+  res.json({ user: publicUser(user) });
+});
+
+const AVATAR_MIME_TO_EXT: Record<string, string> = {
+  "image/jpeg": "jpg",
+  "image/png": "png",
+  "image/webp": "webp",
+};
+const AVATAR_MAX_BYTES = 2 * 1024 * 1024; // 2 MB
+
+const avatarSchema = z.object({
+  mime: z.enum(["image/jpeg", "image/png", "image/webp"]),
+  // base64 with optional data: prefix
+  data: z.string().min(16).max(Math.ceil((AVATAR_MAX_BYTES * 4) / 3) + 64),
+});
+
+router.post("/me/avatar", requireAuth, async (req: AuthedRequest, res) => {
+  const parsed = avatarSchema.safeParse(req.body);
+  if (!parsed.success) {
+    sendError(res, 400, "VALIDATION_ERROR", "Invalid avatar payload (mime + base64 data)");
+    return;
+  }
+  const ext = AVATAR_MIME_TO_EXT[parsed.data.mime];
+  const raw = parsed.data.data.replace(/^data:[^;]+;base64,/, "");
+  const buf = Buffer.from(raw, "base64");
+  if (buf.byteLength === 0 || buf.byteLength > AVATAR_MAX_BYTES) {
+    sendError(res, 400, "VALIDATION_ERROR", "Avatar must be 1 byte – 2 MB");
+    return;
+  }
+  const fs = await import("node:fs/promises");
+  const path = await import("node:path");
+  const dir = process.env.UPLOAD_DIR ?? "/var/www/uploads";
+  const subdir = path.join(dir, "avatars");
+  await fs.mkdir(subdir, { recursive: true });
+  const filename = `${req.userId}.${ext}`;
+  const filePath = path.join(subdir, filename);
+  await fs.writeFile(filePath, buf);
+  // Remove other extensions for the same user so we don't keep stale variants
+  for (const otherExt of Object.values(AVATAR_MIME_TO_EXT)) {
+    if (otherExt === ext) continue;
+    await fs.rm(path.join(subdir, `${req.userId}.${otherExt}`), { force: true });
+  }
+  const publicUrl = `/uploads/avatars/${filename}?v=${Date.now()}`;
+  await updateUser(req.userId!, { avatarUrl: publicUrl });
+  const user = await findUserById(req.userId!);
+  if (!user) {
+    sendError(res, 404, "NOT_FOUND", "User not found");
+    return;
+  }
+  res.json({ user: publicUser(user) });
+});
+
+router.delete("/me/avatar", requireAuth, async (req: AuthedRequest, res) => {
+  const fs = await import("node:fs/promises");
+  const path = await import("node:path");
+  const dir = process.env.UPLOAD_DIR ?? "/var/www/uploads";
+  const subdir = path.join(dir, "avatars");
+  for (const ext of Object.values(AVATAR_MIME_TO_EXT)) {
+    await fs.rm(path.join(subdir, `${req.userId}.${ext}`), { force: true });
+  }
+  await updateUser(req.userId!, { avatarUrl: null });
   const user = await findUserById(req.userId!);
   if (!user) {
     sendError(res, 404, "NOT_FOUND", "User not found");
@@ -264,6 +438,7 @@ router.post("/magic-link/consume", async (req, res) => {
     return;
   }
   const accessToken = signAccessToken(user.id);
+  setAuthCookie(res, accessToken);
   res.json({ token: accessToken, user: publicUser(user) });
 });
 
@@ -361,6 +536,7 @@ router.post("/mfa/verify-login", async (req, res) => {
     return;
   }
   const accessToken = signAccessToken(user.id);
+  setAuthCookie(res, accessToken);
   res.json({ token: accessToken, user: publicUser(user) });
 });
 

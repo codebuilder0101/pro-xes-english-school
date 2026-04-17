@@ -1,5 +1,16 @@
 export type RoomType = "group" | "direct" | "tutor";
 
+export type Gender = "female" | "male" | "non_binary" | "other" | "prefer_not_to_say";
+export type EnglishLevel = "A1" | "A2" | "B1" | "B2" | "C1" | "C2" | "unknown";
+
+export type Address = {
+  street: string;
+  city: string;
+  state?: string;
+  postalCode?: string;
+  country: string;
+};
+
 export type StoredUser = {
   id: string;
   email: string;
@@ -11,6 +22,14 @@ export type StoredUser = {
   totpSecret?: string | null;
   flag?: string;
   createdAt: string;
+  fullName?: string | null;
+  displayName?: string | null;
+  gender?: Gender | null;
+  birthday?: string | null;
+  avatarUrl?: string | null;
+  phone?: string | null;
+  englishLevel?: EnglishLevel | null;
+  address?: Address | null;
 };
 
 export type StoredRoom = {

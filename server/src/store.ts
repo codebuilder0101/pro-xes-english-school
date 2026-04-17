@@ -16,6 +16,14 @@ function rowToUser(r: UserRow): StoredUser {
     totpSecret: r.totp_secret,
     flag: r.flag,
     createdAt: r.created_at,
+    fullName: r.full_name,
+    displayName: r.display_name,
+    gender: (r.gender as StoredUser["gender"]) ?? null,
+    birthday: r.birthday,
+    avatarUrl: r.avatar_url,
+    phone: r.phone,
+    englishLevel: (r.english_level as StoredUser["englishLevel"]) ?? null,
+    address: (r.address as unknown as StoredUser["address"]) ?? null,
   };
 }
 
@@ -204,6 +212,14 @@ export async function updateUser(id: string, patch: Partial<StoredUser>): Promis
   if (patch.locked !== undefined) dbPatch.locked = patch.locked;
   if (patch.totpSecret !== undefined) dbPatch.totp_secret = patch.totpSecret;
   if (patch.flag !== undefined) dbPatch.flag = patch.flag;
+  if (patch.fullName !== undefined) dbPatch.full_name = patch.fullName;
+  if (patch.displayName !== undefined) dbPatch.display_name = patch.displayName;
+  if (patch.gender !== undefined) dbPatch.gender = patch.gender;
+  if (patch.birthday !== undefined) dbPatch.birthday = patch.birthday;
+  if (patch.avatarUrl !== undefined) dbPatch.avatar_url = patch.avatarUrl;
+  if (patch.phone !== undefined) dbPatch.phone = patch.phone;
+  if (patch.englishLevel !== undefined) dbPatch.english_level = patch.englishLevel;
+  if (patch.address !== undefined) dbPatch.address = patch.address;
   if (Object.keys(dbPatch).length === 0) return;
   const { error } = await supabase.from("users").update(dbPatch).eq("id", id);
   if (error) throw error;

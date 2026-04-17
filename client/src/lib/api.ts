@@ -14,7 +14,7 @@ export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise
     headers.set("Authorization", `Bearer ${token}`);
   }
 
-  const res = await fetch(`${base}${path}`, { ...init, headers });
+  const res = await fetch(`${base}${path}`, { credentials: "include", ...init, headers });
   const json = (await res.json().catch(() => ({}))) as { error?: { code?: string; message?: string } };
 
   if (!res.ok) {

@@ -5,11 +5,20 @@ import { sendError } from "../errors.js";
 
 export type AuthedRequest = Request & { userId?: string };
 
-export async function requireAuth(req: AuthedRequest, res: Response, next: NextFunction) {
+export const ACCESS_COOKIE = "xes_access";
+
+export function readAccessToken(req: Request): string | null {
+  const cookieToken = (req as Request & { cookies?: Record<string, string> }).cookies?.[ACCESS_COOKIE];
+  if (cookieToken) return cookieToken;
   const header = req.headers.authorization;
-  const token = header?.startsWith("Bearer ") ? header.slice(7) : null;
+  if (header?.startsWith("Bearer ")) return header.slice(7);
+  return null;
+}
+
+export async function requireAuth(req: AuthedRequest, res: Response, next: NextFunction) {
+  const token = readAccessToken(req);
   if (!token) {
-    sendError(res, 401, "UNAUTHORIZED", "Missing bearer token");
+    sendError(res, 401, "UNAUTHORIZED", "Missing access token");
     return;
   }
   const payload = verifyAccessToken(token);

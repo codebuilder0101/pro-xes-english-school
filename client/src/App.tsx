@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { LanguageProvider } from "@/i18n/LanguageContext";
 import Index from "./pages/Index.tsx";
 import ChatPage from "./pages/ChatPage.tsx";
+import ProfilePage from "./pages/ProfilePage.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import AuthLayout from "./pages/auth/AuthLayout.tsx";
 import SignInPage from "./pages/auth/SignInPage.tsx";
@@ -35,6 +36,7 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/dashboard" element={<Index />} />
             <Route path="/chat" element={<ChatPage />} />
+            <Route path="/profile" element={<ProfilePage />} />
             <Route path="/auth" element={<AuthLayout />}>
               <Route index element={<Navigate to="/auth/sign-in" replace />} />
               <Route path="sign-in" element={<SignInPage />} />

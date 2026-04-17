@@ -2,14 +2,12 @@ import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { LogOut, Menu, X } from "lucide-react";
-import { useState } from "react";
+import { Switch } from "@/components/ui/switch";
+import { Globe, Menu, Moon, User, X } from "lucide-react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useLanguage } from "@/i18n/LanguageContext";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
@@ -23,12 +21,108 @@ const initialsOf = (u: CurrentUser) => {
   return letters.toUpperCase();
 };
 
+const useDarkMode = () => {
+  const [dark, setDark] = useState<boolean>(() => {
+    if (typeof document === "undefined") return false;
+    return document.documentElement.classList.contains("dark");
+  });
+  useEffect(() => {
+    const stored = localStorage.getItem("xes_theme");
+    if (stored === "dark") {
+      document.documentElement.classList.add("dark");
+      setDark(true);
+    }
+  }, []);
+  const toggle = (next: boolean) => {
+    setDark(next);
+    document.documentElement.classList.toggle("dark", next);
+    localStorage.setItem("xes_theme", next ? "dark" : "light");
+  };
+  return { dark, toggle };
+};
+
 const Navbar = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
-  const { t } = useLanguage();
+  const { t, language, setLanguage } = useLanguage();
   const { user, signOut } = useCurrentUser();
+  const { dark, toggle: toggleDark } = useDarkMode();
 
   const displayName = user ? user.name?.trim() || user.email.split("@")[0] : "";
+  const langLabel = language === "pt" ? "Português 🇧🇷" : "English 🇺🇸";
+
+  const UserMenu = (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button className="flex items-center gap-2 rounded-full pl-1 pr-3 py-1 hover:bg-accent transition-colors">
+          <Avatar className="w-8 h-8">
+            <AvatarFallback className="bg-primary/10 text-primary text-xs font-bold">
+              {user ? initialsOf(user) : ""}
+            </AvatarFallback>
+          </Avatar>
+          <span className="text-sm font-semibold text-foreground max-w-[140px] truncate">
+            {displayName}
+          </span>
+          <span className="text-[10px] font-bold uppercase text-muted-foreground">
+            {user?.flag}
+          </span>
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" sideOffset={8} className="w-72 p-0 overflow-hidden">
+        {user && (
+          <>
+            <div className="flex items-center gap-3 px-4 py-4 border-b border-border">
+              <Avatar className="w-12 h-12">
+                <AvatarFallback className="bg-primary/10 text-primary text-base font-bold">
+                  {initialsOf(user)}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-bold text-foreground truncate">{displayName}</span>
+                  <span className="text-[10px] font-bold uppercase tracking-wide rounded-md px-1.5 py-0.5 bg-primary/10 text-primary">
+                    Pro
+                  </span>
+                </div>
+                <span className="text-xs text-muted-foreground truncate block">{user.email}</span>
+              </div>
+            </div>
+
+            <div className="py-1">
+              <MenuRow icon={<User className="w-4 h-4" />} label={t("nav.menu.myProfile")} to="/profile" />
+
+              <button
+                type="button"
+                onClick={() => setLanguage(language === "pt" ? "en" : "pt")}
+                className="w-full flex items-center justify-between px-4 py-2.5 hover:bg-accent transition-colors"
+              >
+                <span className="flex items-center gap-3 text-sm text-foreground">
+                  <Globe className="w-4 h-4" />
+                  {t("nav.menu.language")}
+                </span>
+                <span className="text-xs font-semibold rounded-md border border-border px-2 py-0.5 bg-background">
+                  {langLabel}
+                </span>
+              </button>
+            </div>
+
+            <div className="border-t border-border px-4 py-3 flex items-center justify-between">
+              <span className="flex items-center gap-3 text-sm text-foreground">
+                <Moon className="w-4 h-4" />
+                {t("nav.menu.darkMode")}
+              </span>
+              <Switch checked={dark} onCheckedChange={toggleDark} />
+            </div>
+
+            <div className="border-t border-border p-3">
+              <Button variant="outline" className="w-full" onClick={signOut}>
+                {t("nav.logout")}
+              </Button>
+            </div>
+          </>
+        )}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-lg border-b border-border">
@@ -51,35 +145,7 @@ const Navbar = () => {
 
         <div className="hidden md:flex items-center gap-2">
           <LanguageSwitcher />
-          {user ? (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button className="flex items-center gap-2 rounded-full pl-1 pr-3 py-1 hover:bg-accent transition-colors">
-                  <Avatar className="w-8 h-8">
-                    <AvatarFallback className="bg-primary/10 text-primary text-xs font-bold">
-                      {initialsOf(user)}
-                    </AvatarFallback>
-                  </Avatar>
-                  <span className="text-sm font-semibold text-foreground max-w-[140px] truncate">
-                    {displayName} {user.flag}
-                  </span>
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuLabel className="font-normal">
-                  <div className="flex flex-col">
-                    <span className="text-sm font-semibold truncate">{displayName}</span>
-                    <span className="text-xs text-muted-foreground truncate">{user.email}</span>
-                  </div>
-                </DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={signOut} className="cursor-pointer">
-                  <LogOut className="w-4 h-4 mr-2" />
-                  {t("nav.logout")}
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          ) : (
+          {user ? UserMenu : (
             <>
               <Button variant="ghost" size="sm" asChild>
                 <Link to="/auth/sign-in">{t("nav.login")}</Link>
@@ -109,19 +175,18 @@ const Navbar = () => {
             </div>
             {user ? (
               <>
-                <div className="flex items-center gap-3 py-2">
-                  <Avatar className="w-9 h-9">
-                    <AvatarFallback className="bg-primary/10 text-primary text-xs font-bold">
+                <div className="flex items-center gap-3 py-2 border-t border-border pt-3">
+                  <Avatar className="w-10 h-10">
+                    <AvatarFallback className="bg-primary/10 text-primary text-sm font-bold">
                       {initialsOf(user)}
                     </AvatarFallback>
                   </Avatar>
-                  <div className="flex flex-col leading-tight">
-                    <span className="text-sm font-semibold">{displayName} {user.flag}</span>
+                  <div className="flex flex-col leading-tight min-w-0">
+                    <span className="text-sm font-semibold truncate">{displayName}</span>
                     <span className="text-xs text-muted-foreground truncate">{user.email}</span>
                   </div>
                 </div>
-                <Button variant="ghost" className="w-full min-h-11 justify-start" onClick={signOut}>
-                  <LogOut className="w-4 h-4 mr-2" />
+                <Button variant="outline" className="w-full min-h-11" onClick={signOut}>
                   {t("nav.logout")}
                 </Button>
               </>
@@ -141,5 +206,28 @@ const Navbar = () => {
     </nav>
   );
 };
+
+const MenuRow = ({
+  icon,
+  label,
+  to,
+  trailing,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  to: string;
+  trailing?: React.ReactNode;
+}) => (
+  <Link
+    to={to}
+    className="flex items-center justify-between px-4 py-2.5 hover:bg-accent transition-colors"
+  >
+    <span className="flex items-center gap-3 text-sm text-foreground">
+      {icon}
+      {label}
+    </span>
+    {trailing}
+  </Link>
+);
 
 export default Navbar;
