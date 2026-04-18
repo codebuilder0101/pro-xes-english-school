@@ -71,7 +71,7 @@ export default function SignUpPage() {
       });
       setPendingSignupEmail(data.email);
       if (res.dev?.verificationToken) setEmailVerificationToken(res.dev.verificationToken);
-      navigate("/auth/verify-email", { replace: true });
+      navigate("/auth/sign-in", { replace: true });
     } catch (e) {
       const err = e as ApiError;
       if (err.status === 409) {

@@ -17,6 +17,7 @@ import type { TranslationKey } from "@/i18n/translations";
 import { signInSchema, type SignInValues } from "@/lib/authValidation";
 import { apiFetch, type ApiError } from "@/lib/api";
 import { setAccessToken, setLastLoginEmail, setPendingSignupEmail } from "@/lib/session";
+import { useCurrentUser, type CurrentUser } from "@/lib/useCurrentUser";
 
 function isTranslationKey(key: string): key is TranslationKey {
   return key.startsWith("auth.");
@@ -27,6 +28,7 @@ export default function SignInPage() {
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const [banner, setBanner] = useState<string | null>(null);
+  const { setUser } = useCurrentUser();
 
   const {
     register,
@@ -70,12 +72,13 @@ export default function SignInPage() {
       return;
     }
     try {
-      const res = await apiFetch<{ token: string }>("/api/auth/login", {
+      const res = await apiFetch<{ token: string; user: CurrentUser }>("/api/auth/login", {
         method: "POST",
         body: JSON.stringify({ email: data.email, password: data.password }),
       });
       setAccessToken(res.token);
       setLastLoginEmail(data.email);
+      setUser(res.user);
       navigate("/dashboard", { replace: true });
     } catch (e) {
       const err = e as ApiError;
