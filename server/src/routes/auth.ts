@@ -77,6 +77,7 @@ function publicUser(u: StoredUser) {
     phone: u.phone ?? null,
     englishLevel: u.englishLevel ?? null,
     address: u.address ?? null,
+    language: u.language ?? null,
   };
 }
 
@@ -85,7 +86,9 @@ router.post("/register", async (req, res) => {
     .object({
       email: emailSchema,
       password: passwordSchema,
-      name: z.string().trim().optional(),
+      name: z.string().trim().min(1).max(120),
+      fullName: z.string().trim().min(1).max(120).optional(),
+      displayName: z.string().trim().min(1).max(80).optional(),
       newsletter: z.boolean().optional(),
     })
     .safeParse(req.body);
@@ -101,10 +104,14 @@ router.post("/register", async (req, res) => {
   }
 
   const passwordHash = await bcrypt.hash(body.data.password, 10);
+  const fullName = body.data.fullName ?? body.data.name;
+  const displayName = body.data.displayName ?? fullName;
   const user = await insertUser({
     email: body.data.email,
     passwordHash,
     name: body.data.name,
+    fullName,
+    displayName,
     newsletter: body.data.newsletter,
     locked: body.data.email.toLowerCase() === "locked@example.com",
   });
@@ -171,6 +178,7 @@ router.get("/me", requireAuth, async (req: AuthedRequest, res) => {
 
 const genderSchema = z.enum(["female", "male", "non_binary", "other", "prefer_not_to_say"]);
 const englishLevelSchema = z.enum(["A1", "A2", "B1", "B2", "C1", "C2", "unknown"]);
+const languageSchema = z.enum(["pt", "en"]);
 
 const profilePatchSchema = z.object({
   fullName: z.string().trim().min(1).max(120).optional(),
@@ -188,6 +196,7 @@ const profilePatchSchema = z.object({
   phone: z.string().trim().max(40).regex(/^[+()\-\s\d.]*$/).nullable().optional(),
   englishLevel: englishLevelSchema.nullable().optional(),
   address: z.string().trim().max(500).nullable().optional(),
+  language: languageSchema.nullable().optional(),
   // legacy/simple fields kept for backwards compatibility
   name: z.string().trim().min(1).max(80).optional(),
   flag: z.string().trim().min(1).max(8).optional(),
@@ -210,6 +219,7 @@ router.patch("/me", requireAuth, async (req: AuthedRequest, res) => {
   if (d.address !== undefined) {
     patch.address = d.address && d.address.length > 0 ? d.address : null;
   }
+  if (d.language !== undefined) patch.language = d.language;
   if (d.name !== undefined) patch.name = d.name;
   if (d.flag !== undefined) patch.flag = d.flag;
   if (Object.keys(patch).length === 0) {

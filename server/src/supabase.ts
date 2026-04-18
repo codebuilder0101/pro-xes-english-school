@@ -32,4 +32,5 @@ export type UserRow = {
   phone: string | null;
   english_level: string | null;
   address: string | null;
+  language: string | null;
 };

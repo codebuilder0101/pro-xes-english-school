@@ -24,6 +24,7 @@ function rowToUser(r: UserRow): StoredUser {
     phone: r.phone,
     englishLevel: (r.english_level as StoredUser["englishLevel"]) ?? null,
     address: r.address,
+    language: (r.language as StoredUser["language"]) ?? null,
   };
 }
 
@@ -31,6 +32,8 @@ type NewUser = {
   email: string;
   passwordHash: string;
   name?: string;
+  fullName?: string;
+  displayName?: string;
   newsletter?: boolean;
   locked?: boolean;
 };
@@ -193,6 +196,8 @@ export async function insertUser(user: NewUser): Promise<StoredUser> {
       email: user.email.toLowerCase(),
       password_hash: user.passwordHash,
       name: user.name ?? null,
+      full_name: user.fullName ?? null,
+      display_name: user.displayName ?? null,
       newsletter: user.newsletter ?? false,
       locked: user.locked ?? false,
     })
@@ -220,6 +225,7 @@ export async function updateUser(id: string, patch: Partial<StoredUser>): Promis
   if (patch.phone !== undefined) dbPatch.phone = patch.phone;
   if (patch.englishLevel !== undefined) dbPatch.english_level = patch.englishLevel;
   if (patch.address !== undefined) dbPatch.address = patch.address;
+  if (patch.language !== undefined) dbPatch.language = patch.language;
   if (Object.keys(dbPatch).length === 0) return;
   const { error } = await supabase.from("users").update(dbPatch).eq("id", id);
   if (error) throw error;
