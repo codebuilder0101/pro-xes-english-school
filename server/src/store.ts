@@ -2,7 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import type { DatabaseFile, StoredMessage, StoredRoom, StoredUser } from "./types.js";
-import { supabase, type UserRow } from "./supabase.js";
+import { pool, type UserRow } from "./db.js";
 
 function rowToUser(r: UserRow): StoredUser {
   return {
@@ -170,65 +170,72 @@ export function getDb() {
 }
 
 export async function findUserByEmail(email: string): Promise<StoredUser | undefined> {
-  const { data, error } = await supabase
-    .from("users")
-    .select("*")
-    .ilike("email", email)
-    .maybeSingle();
-  if (error) throw error;
-  return data ? rowToUser(data as UserRow) : undefined;
+  const { rows } = await pool.query<UserRow>(
+    "SELECT * FROM users WHERE lower(email) = lower($1) LIMIT 1",
+    [email],
+  );
+  return rows[0] ? rowToUser(rows[0]) : undefined;
 }
 
 export async function findUserById(id: string): Promise<StoredUser | undefined> {
-  const { data, error } = await supabase
-    .from("users")
-    .select("*")
-    .eq("id", id)
-    .maybeSingle();
-  if (error) throw error;
-  return data ? rowToUser(data as UserRow) : undefined;
+  const { rows } = await pool.query<UserRow>(
+    "SELECT * FROM users WHERE id = $1 LIMIT 1",
+    [id],
+  );
+  return rows[0] ? rowToUser(rows[0]) : undefined;
 }
 
 export async function insertUser(user: NewUser): Promise<StoredUser> {
-  const { data, error } = await supabase
-    .from("users")
-    .insert({
-      email: user.email.toLowerCase(),
-      password_hash: user.passwordHash,
-      name: user.name ?? null,
-      full_name: user.fullName ?? null,
-      display_name: user.displayName ?? null,
-      newsletter: user.newsletter ?? false,
-      locked: user.locked ?? false,
-    })
-    .select("*")
-    .single();
-  if (error) throw error;
-  return rowToUser(data as UserRow);
+  const { rows } = await pool.query<UserRow>(
+    `INSERT INTO users (email, password_hash, name, full_name, display_name, newsletter, locked)
+     VALUES ($1, $2, $3, $4, $5, $6, $7)
+     RETURNING *`,
+    [
+      user.email.toLowerCase(),
+      user.passwordHash,
+      user.name ?? null,
+      user.fullName ?? null,
+      user.displayName ?? null,
+      user.newsletter ?? false,
+      user.locked ?? false,
+    ],
+  );
+  return rowToUser(rows[0]);
 }
 
+const PATCH_COLUMN_MAP: Array<[keyof StoredUser, string]> = [
+  ["email", "email"],
+  ["passwordHash", "password_hash"],
+  ["name", "name"],
+  ["newsletter", "newsletter"],
+  ["emailVerified", "email_verified"],
+  ["locked", "locked"],
+  ["totpSecret", "totp_secret"],
+  ["flag", "flag"],
+  ["fullName", "full_name"],
+  ["displayName", "display_name"],
+  ["gender", "gender"],
+  ["birthday", "birthday"],
+  ["avatarUrl", "avatar_url"],
+  ["phone", "phone"],
+  ["englishLevel", "english_level"],
+  ["address", "address"],
+  ["language", "language"],
+];
+
 export async function updateUser(id: string, patch: Partial<StoredUser>): Promise<void> {
-  const dbPatch: Record<string, unknown> = {};
-  if (patch.email !== undefined) dbPatch.email = patch.email.toLowerCase();
-  if (patch.passwordHash !== undefined) dbPatch.password_hash = patch.passwordHash;
-  if (patch.name !== undefined) dbPatch.name = patch.name;
-  if (patch.newsletter !== undefined) dbPatch.newsletter = patch.newsletter;
-  if (patch.emailVerified !== undefined) dbPatch.email_verified = patch.emailVerified;
-  if (patch.locked !== undefined) dbPatch.locked = patch.locked;
-  if (patch.totpSecret !== undefined) dbPatch.totp_secret = patch.totpSecret;
-  if (patch.flag !== undefined) dbPatch.flag = patch.flag;
-  if (patch.fullName !== undefined) dbPatch.full_name = patch.fullName;
-  if (patch.displayName !== undefined) dbPatch.display_name = patch.displayName;
-  if (patch.gender !== undefined) dbPatch.gender = patch.gender;
-  if (patch.birthday !== undefined) dbPatch.birthday = patch.birthday;
-  if (patch.avatarUrl !== undefined) dbPatch.avatar_url = patch.avatarUrl;
-  if (patch.phone !== undefined) dbPatch.phone = patch.phone;
-  if (patch.englishLevel !== undefined) dbPatch.english_level = patch.englishLevel;
-  if (patch.address !== undefined) dbPatch.address = patch.address;
-  if (patch.language !== undefined) dbPatch.language = patch.language;
-  if (Object.keys(dbPatch).length === 0) return;
-  const { error } = await supabase.from("users").update(dbPatch).eq("id", id);
-  if (error) throw error;
+  const columns: string[] = [];
+  const values: unknown[] = [];
+  for (const [field, column] of PATCH_COLUMN_MAP) {
+    const value = patch[field];
+    if (value === undefined) continue;
+    columns.push(column);
+    values.push(field === "email" ? String(value).toLowerCase() : value);
+  }
+  if (columns.length === 0) return;
+  const setClause = columns.map((c, i) => `${c} = $${i + 1}`).join(", ");
+  values.push(id);
+  await pool.query(`UPDATE users SET ${setClause} WHERE id = $${values.length}`, values);
 }
 
 export function listRooms(): StoredRoom[] {

@@ -1,17 +1,11 @@
-import { createClient } from "@supabase/supabase-js";
+import { Pool } from "pg";
 
-const url = process.env.SUPABASE_URL;
-const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-if (!url || !serviceKey) {
-  throw new Error(
-    "Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY in environment. Check server/.env",
-  );
+const connectionString = process.env.DATABASE_URL;
+if (!connectionString) {
+  throw new Error("Missing DATABASE_URL in environment. Check server/.env");
 }
 
-export const supabase = createClient(url, serviceKey, {
-  auth: { persistSession: false, autoRefreshToken: false },
-});
+export const pool = new Pool({ connectionString });
 
 export type UserRow = {
   id: string;
