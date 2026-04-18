@@ -47,7 +47,7 @@ const Navbar = () => {
   const { dark, toggle: toggleDark } = useDarkMode();
 
   const displayName = user
-    ? user.displayName?.trim() || user.name?.trim() || user.email.split("@")[0]
+    ? user.displayName?.trim() || user.fullName?.trim() || user.name?.trim() || user.email.split("@")[0]
     : "";
   const avatarUrl = user?.avatarUrl ?? null;
 

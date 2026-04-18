@@ -10,6 +10,8 @@ import {
 } from "react";
 import { apiFetch, type ApiError } from "./api";
 import { clearAccessToken } from "./session";
+import { useLanguage } from "@/i18n/LanguageContext";
+import type { Language } from "@/i18n/translations";
 
 export type Gender = "female" | "male" | "non_binary" | "other" | "prefer_not_to_say";
 export type EnglishLevel = "A1" | "A2" | "B1" | "B2" | "C1" | "C2" | "unknown";
@@ -28,6 +30,7 @@ export type CurrentUser = {
   phone: string | null;
   englishLevel: EnglishLevel | null;
   address: string | null;
+  language: Language | null;
 };
 
 type CurrentUserContextValue = {
@@ -40,6 +43,7 @@ type CurrentUserContextValue = {
 const CurrentUserContext = createContext<CurrentUserContextValue | null>(null);
 
 export function CurrentUserProvider({ children }: { children: ReactNode }) {
+  const { setLanguage } = useLanguage();
   const [user, setUser] = useState<CurrentUser | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
 
@@ -48,7 +52,9 @@ export function CurrentUserProvider({ children }: { children: ReactNode }) {
     setLoading(true);
     apiFetch<{ user: CurrentUser }>("/api/auth/me")
       .then((res) => {
-        if (!cancelled) setUser(res.user);
+        if (cancelled) return;
+        setUser(res.user);
+        if (res.user.language) setLanguage(res.user.language);
       })
       .catch((e) => {
         const err = e as ApiError;
@@ -61,7 +67,7 @@ export function CurrentUserProvider({ children }: { children: ReactNode }) {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [setLanguage]);
 
   const signOut = useCallback(async () => {
     try {

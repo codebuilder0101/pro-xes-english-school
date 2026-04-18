@@ -57,12 +57,15 @@ export default function SignUpPage() {
   const onSubmit = async (data: SignUpValues) => {
     setBanner(null);
     try {
+      const fullName = data.name.trim();
       const res = await apiFetch<{ dev?: { verificationToken?: string } }>("/api/auth/register", {
         method: "POST",
         body: JSON.stringify({
           email: data.email,
           password: data.password,
-          name: data.name || undefined,
+          name: fullName,
+          fullName,
+          displayName: fullName,
           newsletter: data.newsletter,
         }),
       });
@@ -104,9 +107,9 @@ export default function SignUpPage() {
           <AuthTextField
             id="signup-name"
             label={t("auth.signUp.nameLabel")}
-            optionalHint={t("auth.signUp.nameOptional")}
             autoComplete="name"
-            placeholder="Alex"
+            required
+            placeholder="Alex Silva"
             error={translate(errors.name?.message)}
             {...register("name")}
           />

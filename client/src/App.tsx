@@ -4,7 +4,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { LanguageProvider } from "@/i18n/LanguageContext";
-import { CurrentUserProvider } from "@/lib/useCurrentUser";
+import { CurrentUserProvider, useCurrentUser } from "@/lib/useCurrentUser";
 import Index from "./pages/Index.tsx";
 import ChatPage from "./pages/ChatPage.tsx";
 import ProfilePage from "./pages/ProfilePage.tsx";
@@ -26,6 +26,20 @@ import WelcomePage from "./pages/auth/WelcomePage.tsx";
 
 const queryClient = new QueryClient();
 
+const LandingRoute = () => {
+  const { user, loading } = useCurrentUser();
+  if (loading) return null;
+  if (user) return <Navigate to="/dashboard" replace />;
+  return <Index />;
+};
+
+const DashboardRoute = () => {
+  const { user, loading } = useCurrentUser();
+  if (loading) return null;
+  if (!user) return <Navigate to="/" replace />;
+  return <Index />;
+};
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <LanguageProvider>
@@ -35,8 +49,8 @@ const App = () => (
           <Sonner />
           <BrowserRouter>
             <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/dashboard" element={<Index />} />
+              <Route path="/" element={<LandingRoute />} />
+              <Route path="/dashboard" element={<DashboardRoute />} />
               <Route path="/chat" element={<ChatPage />} />
               <Route path="/profile" element={<ProfilePage />} />
               <Route path="/auth" element={<AuthLayout />}>

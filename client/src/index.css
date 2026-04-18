@@ -37,12 +37,12 @@
     --radius: 1rem;
 
     /* Custom tokens */
-    --energy: 280 70% 55%;
+    --energy: 190 85% 45%;
     --energy-foreground: 0 0% 100%;
     --warm: 15 90% 58%;
     --warm-foreground: 0 0% 100%;
     --gradient-primary: linear-gradient(135deg, hsl(145, 65%, 42%), hsl(165, 70%, 40%));
-    --gradient-hero: linear-gradient(135deg, hsl(200, 85%, 50%), hsl(280, 70%, 55%));
+    --gradient-hero: linear-gradient(135deg, hsl(205, 90%, 52%), hsl(175, 80%, 42%));
     --gradient-warm: linear-gradient(135deg, hsl(35, 95%, 55%), hsl(15, 90%, 58%));
     --shadow-card: 0 4px 24px -4px hsl(220 25% 14% / 0.08);
     --shadow-elevated: 0 12px 40px -8px hsl(220 25% 14% / 0.15);

@@ -17,7 +17,7 @@ const passwordRules = z
 
 export const signUpSchema = z
   .object({
-    name: z.string().optional(),
+    name: z.string().trim().min(1, "auth.error.required"),
     email: emailSchema,
     password: passwordRules,
     confirmPassword: z.string().min(1, "auth.error.required"),

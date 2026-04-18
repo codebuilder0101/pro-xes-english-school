@@ -261,7 +261,7 @@ const ChatPage = () => {
                     <div className="flex items-center gap-2 mb-1">
                       <span className="text-xs font-bold text-foreground">{msg.sender}</span>
                       {msg.isTutor && (
-                        <span className="text-[10px] bg-primary/10 text-primary font-bold px-1.5 py-0.5 rounded">Tutor</span>
+                        <span className="text-[10px] bg-primary/10 text-primary font-bold px-1.5 py-0.5 rounded">Mentor</span>
                       )}
                     </div>
                   )}

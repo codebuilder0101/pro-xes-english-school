@@ -18,6 +18,7 @@ import { Calendar as CalendarIcon, Camera, Trash2, X } from "lucide-react";
 import { format, parse, isValid } from "date-fns";
 import { ptBR, enUS } from "date-fns/locale";
 import type { Locale } from "date-fns";
+import { toast } from "sonner";
 import Navbar from "@/components/landing/Navbar";
 import { apiFetch, type ApiError } from "@/lib/api";
 import { useCurrentUser, type CurrentUser, type EnglishLevel, type Gender } from "@/lib/useCurrentUser";
@@ -46,6 +47,7 @@ type FormState = {
   phone: string;
   englishLevel: EnglishLevel | "";
   address: string;
+  language: Language;
 };
 
 type Errors = Partial<Record<keyof FormState, string>> & {
@@ -62,12 +64,13 @@ const fileToBase64 = (file: File): Promise<string> =>
 
 const userToForm = (u: CurrentUser): FormState => ({
   fullName: u.fullName ?? "",
-  displayName: u.displayName ?? u.name ?? "",
+  displayName: u.displayName ?? u.fullName ?? u.name ?? "",
   gender: u.gender ?? "",
   birthday: u.birthday ?? "",
   phone: u.phone ?? "",
   englishLevel: u.englishLevel ?? "",
   address: u.address ?? "",
+  language: u.language ?? "pt",
 });
 
 const normalizedForm = (s: FormState): FormState => ({
@@ -78,6 +81,7 @@ const normalizedForm = (s: FormState): FormState => ({
   phone: s.phone.trim(),
   englishLevel: s.englishLevel,
   address: s.address.trim(),
+  language: s.language,
 });
 
 const sameForm = (a: FormState, b: FormState) => {
@@ -105,6 +109,7 @@ const ProfilePage = () => {
     phone: "",
     englishLevel: "",
     address: "",
+    language: "pt",
   });
 
   useEffect(() => {
@@ -206,6 +211,7 @@ const ProfilePage = () => {
         phone: form.phone.trim() || null,
         englishLevel: form.englishLevel || null,
         address: form.address.trim() || null,
+        language: form.language,
       };
       const res = await apiFetch<{ user: CurrentUser }>("/api/auth/me", {
         method: "PATCH",
@@ -213,10 +219,14 @@ const ProfilePage = () => {
       });
       setUser(res.user);
       setForm(userToForm(res.user));
-      setBanner({ kind: "ok", msg: t("profile.saved") });
+      if (res.user.language) setLanguage(res.user.language);
+      setBanner(null);
+      toast.success(t("profile.savedTitle"), { description: t("profile.saved") });
     } catch (err) {
       const ae = err as ApiError;
-      setBanner({ kind: "err", msg: ae.message || t("profile.saveError") });
+      const msg = ae.message || t("profile.saveError");
+      setBanner(null);
+      toast.error(t("profile.saveErrorTitle"), { description: msg });
     } finally {
       setSaving(false);
     }
@@ -408,8 +418,12 @@ const ProfilePage = () => {
                   helper={t("profile.language.helper")}
                 >
                   <Select
-                    value={language}
-                    onValueChange={(v) => setLanguage(v as Language)}
+                    value={form.language}
+                    onValueChange={(v) => {
+                      const lang = v as Language;
+                      setField("language", lang);
+                      setLanguage(lang);
+                    }}
                   >
                     <SelectTrigger id="profile-language">
                       <SelectValue />
